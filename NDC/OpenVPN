@@ -1,0 +1,142 @@
+# 🎯 **Practical: OpenVPN Basic Setup**
+
+## 🗂️ **Lab Details**
+
+| Component | OS      | Role           | IP             |
+| --------- | ------- | -------------- | -------------- |
+| Server    | Debian  | OpenVPN Server | 192.168.80.130 |
+| Client    | Windows | OpenVPN Client | Dynamic        |
+
+---
+
+## 📌 **1️⃣ Install OpenVPN (Debian)**
+
+```bash
+sudo apt-get update
+sudo apt-get install openvpn -y
+sudo which openvpn   # Verify install
+```
+
+---
+
+## ⚙️ **2️⃣ Configure OpenVPN Server**
+
+Create the config file:
+
+```bash
+sudo nano server.conf
+```
+
+✅ Example content:
+
+```
+proto udp
+port 1194
+dev tun
+auth none
+cipher none
+ifconfig 10.8.0.1 10.8.0.2
+verb 3
+```
+
+> 🔍 `auth none` and `cipher none` are for lab simplicity only — no real security!
+
+---
+
+## 🟢 **3️⃣ Run OpenVPN Server**
+
+```bash
+sudo openvpn --config server.conf
+```
+
+In another tab:
+
+```bash
+ip a
+```
+
+✅ Check for **tun0** interface — should show:
+
+```
+10.8.0.1 peer 10.8.0.2
+```
+
+---
+
+## 💻 **4️⃣ Windows Client Setup**
+
+> ✔️ Install **OpenVPN Connect** or **OpenVPN Community Client**
+
+Create `client.conf`:
+
+```bash
+# Open Notepad as Administrator
+remote 192.168.80.130
+proto udp
+port 1194
+dev tun
+auth none
+cipher none
+ifconfig 10.8.0.2 10.8.0.1
+verb 3
+```
+
+✅ Save to:
+
+```
+C:\Program Files (x86)\OpenVPN Technologies\OpenVPN Client\core\client.conf
+```
+
+---
+
+## ▶️ **5️⃣ Start OpenVPN Client (Windows CMD)**
+
+Open **Command Prompt as Administrator**:
+
+```bash
+cd "C:\Program Files (x86)\OpenVPN Technologies\OpenVPN Client\core"
+openvpn --config client.conf
+```
+
+✅ You should see:
+
+```
+Initialization Sequence Completed
+```
+
+---
+
+## 🔎 **6️⃣ Test Tunnel**
+
+```bash
+ping 10.8.0.1
+ping 192.168.80.130
+```
+
+✅ Both must reply!
+
+---
+
+## 🧩 **7️⃣ On Debian — Observe Packets**
+
+Install tcpdump:
+
+```bash
+sudo apt-get install tcpdump -y
+```
+
+Check physical interface:
+
+```bash
+sudo tcpdump not port 22 -i ens33
+```
+
+Check VPN tunnel interface:
+
+```bash
+sudo tcpdump not port 22 -i tun0
+```
+
+✅ **Do pings from Windows** — you’ll see ICMP packets on **tun0**, showing the VPN tunnel works!
+
+---
