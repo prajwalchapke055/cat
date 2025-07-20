@@ -1,0 +1,262 @@
+# 🔒 Snort IDS on Windows — Step-by-Step Practical
+
+## 📌 **[1️⃣] Show File Extensions (Windows)**
+
+- Open **File Explorer**
+- Click the **View** tab
+- Check ✅ **File name extensions**
+  _(This helps you see `.rules` extensions correctly.)_
+
+---
+
+## 📌 **[2️⃣] Exclude Snort Folder in Windows Defender**
+
+- Open **Windows Security**
+  ➜ Start > Settings > Update & Security > Windows Security > Virus & threat protection
+  ➜ Manage settings > Exclusions
+  ➜ Add or remove exclusions
+  ➜ Add **Folder** ➜ Select your `C:\Snort` folder
+
+---
+
+## 📌 **[3️⃣] Install Snort & WinPcap**
+
+1️⃣ **Download Snort for Windows** from official site → Run installer → Default location `C:\Snort` → Install as Administrator.
+2️⃣ **Download & Install WinPcap** → Accept defaults → Needed for Snort to capture packets.
+
+---
+
+## 📌 **[4️⃣] Explore Snort Directory**
+
+- Open `C:\Snort` in File Explorer.
+- Typical folders:
+
+  - **bin/** → Snort executables.
+  - **etc/** → Config files (`snort.conf`).
+  - **rules/** → IDS rule files.
+  - **log/** → Logs of alerts.
+  - **schemas/** → Core config schemas.
+
+👉 Note these for your viva.
+
+---
+
+## 📌 **[5️⃣] Verify Installation**
+
+Open **Command Prompt as Administrator**:
+
+```bash
+cd C:\Snort\bin
+snort -?
+```
+
+Check that Snort runs and shows help.
+
+---
+
+## 📌 **[6️⃣] Check Network Interfaces**
+
+```bash
+cd C:\Snort\bin
+snort -W
+```
+
+- Lists your network interfaces.
+- Note the interface number you’ll use.
+  _(E.g., `1` for Ethernet, `2` for Wi-Fi)_
+
+---
+
+## 📌 **[7️⃣] Download & Add Snort Rules**
+
+1️⃣ Download `snortrules-snapshot-xxx.tar.gz` (from Snort website).
+2️⃣ Use **7-Zip**:
+
+- Extract to `C:\Snort`
+- **Overwrite all** when asked.
+- The `rules/` folder should now have \~85 `.rules` files, e.g., `browser-ie.rules`.
+
+---
+
+## 📌 **[8️⃣] Basic Windows Network Check**
+
+```bash
+getmac /fo csv /v
+```
+
+- `/fo csv` → format output as CSV
+- `/v` → verbose (extra details)
+
+---
+
+## 📌 **[9️⃣] Fix Common `snort.conf` Errors**
+
+**Open `C:\Snort\etc\snort.conf` in VS Code or Notepad++.**
+
+✅ **ERROR 1 — `ipvar`**
+
+```plaintext
+Search: ipvar
+Replace: var
+```
+
+✔️ Replace all.
+
+---
+
+✅ **ERROR 2 — `snort_dynamicpreprocessor`**
+
+```plaintext
+# Original (Linux path):
+dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor/
+
+# Replace with:
+dynamicpreprocessor directory C:\Snort\lib\snort_dynamicpreprocessor
+
+# Example line:
+dynamicpreprocessor C:\Snort\lib\snort_dynamicpreprocessor\sf_dce2.dll
+```
+
+---
+
+✅ **ERROR 3 — `dynamicengine`**
+
+```plaintext
+# Original:
+dynamicengine /usr/local/lib/snort_dynamicengine/libsf_engine.so
+
+# Replace with:
+dynamicengine C:\Snort\lib\snort_dynamicengine\sf_engine.dll
+```
+
+---
+
+✅ **ERROR 4 — `snort_dynamicrules` folder**
+
+- Make this folder if missing:
+
+  ```plaintext
+  C:\Snort\lib\snort_dynamicrules
+  ```
+
+---
+
+✅ **ERROR 5 — `normalize_ip4`**
+
+- Search:
+
+  ```plaintext
+  Step #5: Configure preprocessors
+  ```
+
+- **Comment all 5 lines** below it using `#`.
+
+---
+
+✅ **ERROR 6 — `white_list.rules`**
+
+- Make an empty file:
+
+  ```plaintext
+  C:\Snort\rules\white_list.rules
+  ```
+
+✅ **ERROR 7 — `black_list.rules`**
+
+- Make an empty file:
+
+  ```plaintext
+  C:\Snort\rules\black_list.rules
+  ```
+
+---
+
+## 📌 **[🔟] Correct `snort.conf` Paths**
+
+✔️ Change rule paths:
+
+```plaintext
+var RULE_PATH C:\Snort\rules
+var SO_RULE_PATH C:\Snort\so_rules
+var PREPROC_RULE_PATH C:\Snort\preproc_rules
+
+var WHITE_LIST_PATH C:\Snort\rules
+var BLACK_LIST_PATH C:\Snort\rules
+
+whitelist $WHITE_LIST_PATH\white_list.rules, \
+blacklist $BLACK_LIST_PATH\black_list.rules
+```
+
+✔️ Fix line 573:
+
+```plaintext
+include $RULE_PATH\black_list.rules
+```
+
+---
+
+## 📌 **[1️⃣1️⃣] Test Snort Config**
+
+Run:
+
+```bash
+cd C:\Snort\bin
+snort -i 1 -c C:\Snort\etc\snort.conf -l C:\Snort\log -T
+```
+
+✔️ `-T` → test config
+✔️ `-i 1` → your interface number
+
+---
+
+## 📌 **[1️⃣2️⃣] Write a Custom Rule**
+
+1️⃣ Create:
+
+```plaintext
+C:\Snort\rules\myrules.rules
+```
+
+Content:
+
+```plaintext
+alert ip any any -> any any (msg:"Your Message"; sid:1000001;)
+```
+
+2️⃣ Add to `snort.conf`:
+
+```plaintext
+include $RULE_PATH\myrules.rules
+```
+
+Save.
+
+---
+
+## 📌 **[1️⃣3️⃣] Run Snort in IDS Mode**
+
+```bash
+cd C:\Snort\bin
+
+# Test config:
+snort -i 1 -c C:\Snort\etc\snort.conf -l C:\Snort\log -T
+
+# Run & show alerts in console:
+snort -i 1 -c C:\Snort\etc\snort.conf -l C:\Snort\log -A console
+```
+
+✔️ `-A console` → show alerts live.
+
+---
+
+## ✅ **Result**
+
+🎉 You now have:
+
+- Installed Snort
+- Fixed all config errors
+- Added official rules + your custom rule
+- Ran Snort IDS in live monitoring mode
+- Logs saved in `C:\Snort\log`
+
+---

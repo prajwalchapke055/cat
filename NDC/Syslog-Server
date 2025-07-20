@@ -1,0 +1,101 @@
+# 🔍 SYSLOG Server Practical
+
+## ✅ **Lab Setup**
+
+| **Machine** | **Role**      | **OS**         | **IP Example** |
+| ----------- | ------------- | -------------- | -------------- |
+| VM1         | IDS (Snort)   | Windows        | 192.168.80.101 |
+| VM2         | SYSLOG Server | Windows (Kiwi) | 192.168.80.131 |
+
+---
+
+## ✅ **Pre-check**
+
+✔️ Both VMs **must be on same network** (e.g., same Virtual Network in VMware).
+✔️ Both VMs **should ping each other**:
+
+```bash
+ping 192.168.80.131   # from Snort VM
+ping 192.168.80.101   # from Kiwi VM
+```
+
+✔️ Disable Windows Firewall on both VMs:
+
+```bash
+# Search: Windows Security > Firewall > Turn off
+```
+
+---
+
+## ✅ **Install Kiwi Syslog Server**
+
+1️⃣ On **VM2 (SYSLOG Server)**
+
+- Download **Kiwi Syslog Server** from SolarWinds official site.
+- Install with **default settings**.
+- Open Kiwi Syslog Server — it listens on UDP port **514** by default.
+
+2️⃣ Verify Kiwi is **Running** — by default, new messages appear live in the console.
+
+---
+
+## ✅ **Configure Snort to Send Logs**
+
+On **VM1 (Snort)**:
+
+1️⃣ Edit your `snort.conf` file:
+
+```plaintext
+# Open snort.conf in Notepad or VSCode
+
+# Around line 542-545, find the syslog section.
+# Uncomment or add this line:
+output alert_syslog: host=192.168.80.131:514, LOG_AUTH LOG_ALERT
+```
+
+- **host=** ➜ IP of Kiwi Syslog VM.
+- **514** ➜ Default SYSLOG UDP port.
+
+2️⃣ Save the `snort.conf`.
+
+---
+
+## ✅ **Run Snort with SYSLOG output**
+
+```powershell
+# Open Command Prompt as Admin:
+
+cd C:\Snort\bin
+
+# Verify available interfaces:
+snort -W
+
+# Run Snort in IDS mode & enable SYSLOG output:
+snort -i 1 -c c:\Snort\etc\snort.conf -l c:\Snort\log -A console
+
+# OR explicitly:
+snort -i 1 -c c:\Snort\etc\snort.conf -l c:\Snort\log -s
+```
+
+- ✅ `-s` ➜ tells Snort to send alerts to SYSLOG.
+
+---
+
+## ✅ **Generate Traffic**
+
+- Ping from any other host or use a simple test rule in Snort:
+
+  ```plaintext
+  alert icmp any any -> any any (msg: "ICMP Detected"; sid:1000002;)
+  ```
+
+- Save to `local.rules` and include in `snort.conf`.
+
+---
+
+## ✅ **Verify on Kiwi**
+
+- In **Kiwi Syslog Server**, you should see messages appear in **real time** under **Log Display**.
+- If needed, check that UDP port **514** is not blocked by Windows Firewall.
+
+---

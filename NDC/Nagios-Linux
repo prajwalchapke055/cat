@@ -1,0 +1,228 @@
+# 🔍 Machine Health Monitoring with Nagios - Practical Steps
+
+## 📌 **1️⃣ Pre-flight Setup**
+
+**➤ Set Hostname**
+
+```bash
+sudo nano /etc/hostname
+# add:
+nagios-server
+```
+
+**➤ Edit hosts file**
+
+```bash
+sudo nano /etc/hosts
+# add:
+127.0.0.1   nagios-server
+```
+
+---
+
+**➤ Configure Static IP**
+
+```bash
+sudo nano /etc/network/interfaces
+# Example:
+auto ens33
+iface ens33 inet static
+  address 192.168.80.101/24
+  gateway 192.168.80.2
+```
+
+---
+
+**➤ Verify Internet**
+
+```bash
+ping -c 3 google.com
+ping 192.168.80.101
+```
+
+---
+
+**➤ Add APT Repository**
+
+```bash
+sudo nano /etc/apt/sources.list
+# add:
+deb [trusted=1] http://192.168.1.251/sw/repo/deb12/ bookworm main
+```
+
+---
+
+**➤ Install sudo (if needed)**
+
+```bash
+apt install sudo -y
+```
+
+---
+
+**➤ Set Time Zone**
+
+```bash
+sudo dpkg-reconfigure tzdata
+# Choose Asia / India / Kolkata
+```
+
+---
+
+## 📌 **2️⃣ Install Nagios Core**
+
+**Install Dependencies**
+
+```bash
+sudo apt-get update
+sudo apt-get install apache2-utils autoconf gcc libc6 libgd-dev make php python3 tree unzip wget libkrb5-dev openssl libssl-dev -y
+```
+
+---
+
+**Download & Extract**
+
+```bash
+sudo wget http://192.168.1.251/sw/utilities/security_tools/nagios/nagios-4.5.0.tar.gz
+
+ls -l
+tar -xzf nagios-4.5.0.tar.gz
+cd nagios-4.5.0
+```
+
+---
+
+**Configure & Compile**
+
+```bash
+sudo ./configure --with-httpd-conf=/etc/apache2/sites-enabled
+sudo make all
+```
+
+---
+
+**Add User & Group**
+
+```bash
+sudo make install-groups-users
+sudo passwd nagios
+# Enter password: i
+
+cat /etc/passwd
+sudo usermod -a -G nagios www-data
+```
+
+---
+
+**Install Binaries**
+
+```bash
+sudo make install
+sudo make install-daemoninit
+sudo make install-commandmode
+```
+
+---
+
+**If `/etc` not created in Nagios:**
+
+```bash
+sudo make install-config
+```
+
+---
+
+## 📌 **3️⃣ Configure Apache**
+
+**Install Nagios web conf**
+
+```bash
+sudo make install-webconf
+tree /etc/apache2/sites-*
+```
+
+✅ Check: `nagios.conf` should appear in `/etc/apache2/sites-enabled`.
+
+---
+
+**Enable Apache Modules**
+
+```bash
+sudo a2enmod cgi
+sudo a2enmod rewrite
+```
+
+---
+
+**Set up Web User**
+
+```bash
+sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+# Password: i
+```
+
+---
+
+**Verify Config**
+
+```bash
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+```
+
+✅ Fix any warnings.
+
+---
+
+## 📌 **4️⃣ Restart Services**
+
+```bash
+sudo systemctl restart nagios
+sudo systemctl restart apache2
+```
+
+---
+
+## 📌 **5️⃣ Access Web Interface**
+
+**Open Browser:**
+
+```plaintext
+http://192.168.80.101/nagios
+```
+
+**Login:**
+
+- Username: `nagiosadmin`
+- Password: `i`
+
+---
+
+## 📌 **6️⃣ Install Nagios Plugins**
+
+```bash
+sudo apt-get install -y automake autotools-dev bc build-essential dc gawk gettext libmcrypt-dev libnet-snmp-perl libssl-dev snmp
+
+sudo wget http://192.168.1.251/sw/utilities/security_tools/nagios/nagios-plugins-2.4.8.tar.gz
+
+tar -zxf nagios-plugins-2.4.8.tar.gz
+cd nagios-plugins
+sudo ./configure
+sudo make
+sudo make install
+
+ls -l /usr/local/nagios/libexec/
+```
+
+---
+
+## 📌 **7️⃣ Verify in Browser**
+
+Revisit:
+
+```plaintext
+http://192.168.80.101/nagios/
+```
+
+✅ All services should show **Green** status = _Machine health OK!_
+
+---

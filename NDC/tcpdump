@@ -1,0 +1,130 @@
+# 🔍 tcpdump — Practical & Commands
+
+## 📌 **1️⃣ Install & Verify**
+
+```bash
+
+# Update package lists:
+sudo apt-get update
+
+# Install tcpdump:
+sudo apt-get install tcpdump -y
+
+# Confirm install:
+sudo which tcpdump
+```
+
+---
+
+## 📌 **2️⃣ Basic Usage**
+
+```bash
+# Start live capture (default):
+sudo tcpdump
+
+# Show all available interfaces:
+sudo tcpdump -D
+
+# Capture on specific interface (e.g., ens33):
+sudo tcpdump -i ens33
+```
+
+---
+
+## 📌 **3️⃣ Filter by Protocol**
+
+```bash
+# Capture only ICMP (ping):
+sudo tcpdump -i ens33 icmp
+
+# Capture only TCP packets:
+sudo tcpdump -i ens33 tcp
+```
+
+---
+
+## 📌 **4️⃣ Limit Packet Count**
+
+```bash
+# Capture only 2 packets:
+sudo tcpdump -i ens33 -c 2
+
+# Same, but show numeric IPs & ports (no DNS):
+sudo tcpdump -i ens33 -c 2 -n
+```
+
+---
+
+## 📌 **5️⃣ Manual / Help**
+
+```bash
+# Open the manual:
+sudo man tcpdump
+```
+
+---
+
+## 📌 **6️⃣ Save Captures to File**
+
+```bash
+# Make a working directory:
+mkdir ~/class
+cd ~/class
+
+# List files with details:
+ls -l
+
+# Capture 2 packets & save to file:
+sudo tcpdump -c 2 -w kuch.bhi
+
+# Read packets from file:
+sudo tcpdump -r kuch.bhi
+```
+
+✅ `.bhi` is just a made-up name; `.pcap` is also common.
+
+---
+
+## 📌 **7️⃣ Common Filters**
+
+### ➤ **a) Network filter**
+
+```bash
+# Capture traffic to/from 192.168.68.0/24:
+tcpdump net 192.168.68.0/24
+```
+
+### ➤ **b) Destination network filter**
+
+```bash
+tcpdump dst net 192.168.68.0/24
+```
+
+### ➤ **c) Host filter**
+
+```bash
+# Capture all traffic to/from single IP:
+tcpdump host 192.168.68.1
+
+# Source host only:
+tcpdump src host 192.168.68.134
+```
+
+### ➤ **d) Port filter**
+
+```bash
+# Single port (e.g., SSH):
+tcpdump port 22
+
+# Port range (e.g., FTP, SSH):
+tcpdump portrange 20-23
+```
+
+### ➤ **e) Complex filter (example)**
+
+```bash
+# Match TCP traffic on port 80 with specific destination IPs:
+sudo tcpdump -i eth1 '((tcp) and (port 80) and ((dst host 192.168.1.254) or (dst host 192.168.1.200)))'
+```
+
+---

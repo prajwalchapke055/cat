@@ -1,0 +1,225 @@
+# 🛡️ Suricata IDS
+
+## 🗂️ **Setup**
+
+| Component       | Hostname | Interface |
+| --------------- | -------- | --------- |
+| Suricata Server | deb1     | ens33     |
+| Attacker/Test   | deb2     | —         |
+
+---
+
+## 📌 **1️⃣ Install Suricata**
+
+```bash
+sudo apt-get update
+sudo apt-get install suricata -y
+```
+
+✅ Confirm installation:
+
+```bash
+sudo which suricata
+```
+
+---
+
+## ⚙️ **2️⃣ Configure Suricata**
+
+```bash
+sudo nano /etc/suricata/suricata.yml
+```
+
+**Edit these sections:**
+
+🔍 **af-packet:**
+
+```yaml
+- interface: ens33
+```
+
+_(Your network interface)_
+
+🔍 **rule-files:**
+
+```yaml
+rule-files:
+  - suricata.rules
+  - local.rules
+```
+
+✅ This means Suricata will load:
+
+- Default rules (`suricata.rules`)
+- Your custom rules (`local.rules`)
+
+---
+
+## 📝 **3️⃣ Add Custom Ping Detection Rule**
+
+```bash
+sudo nano /etc/suricata/rules/local.rules
+```
+
+Add:
+
+```bash
+alert icmp any any -> any any (msg: "Ping Detected"; sid: 123; rev: 1;)
+```
+
+---
+
+## 🔄 **4️⃣ Restart Suricata**
+
+```bash
+sudo systemctl restart suricata
+sudo systemctl status suricata
+```
+
+✅ **Status:**
+Should show `active (running)`.
+
+---
+
+## 👀 **5️⃣ Tail Suricata Logs**
+
+```bash
+sudo tail -f /var/log/suricata/fast.log
+```
+
+---
+
+## 🧪 **6️⃣ Test the Rule**
+
+From **Debian 2**, ping the Suricata server:
+
+```bash
+ping <Suricata_Server_IP>
+```
+
+✅ While pinging, your `fast.log` should show:
+
+```
+07/21/2025-15:01:45.123456 [**] [1:123:1] Ping Detected [**] [Classification: Generic ICMP event] [Priority: 3] {ICMP} <src_IP> -> <dst_IP>
+```
+
+---
+
+# 🛡️ Suricata IPS Mode
+
+## 🗂️ **Setup**
+
+| Component        | Hostname | Role           |
+| ---------------- | -------- | -------------- |
+| Suricata Server  | deb1     | IPS            |
+| Attacker Machine | deb2     | Generates ping |
+
+---
+
+## 📌 **1️⃣ Verify NFQUEUE Support**
+
+```bash
+suricata --build-info | grep NFQueue
+```
+
+✅ Output must be:
+
+```
+NFQueue support : yes
+```
+
+---
+
+## ⚙️ **2️⃣ Edit Suricata Config for NFQUEUE**
+
+```bash
+sudo nano /etc/suricata/suricata.yml
+```
+
+✅ Uncomment and set:
+
+```yaml
+nfq:
+  mode: accept
+  repeat-mark: 1
+  repeat-mask: 1
+  route-queue: 2
+```
+
+---
+
+## 🧩 **3️⃣ Install & Configure iptables**
+
+```bash
+sudo apt-get install iptables -y
+```
+
+✅ Add iptables rules:
+
+```bash
+sudo iptables -I INPUT -p icmp -j NFQUEUE --queue-num 2
+sudo iptables -I OUTPUT -p icmp -j NFQUEUE --queue-num 2
+```
+
+✅ Verify:
+
+```bash
+sudo iptables -L -v
+```
+
+---
+
+## 📝 **4️⃣ Add Drop Rule**
+
+```bash
+sudo nano /etc/suricata/rules/local.rules
+```
+
+Add:
+
+```bash
+drop icmp any any -> any any (msg: "Ping Detected"; sid: 123; rev:1;)
+```
+
+---
+
+## 🔄 **5️⃣ Stop IDS Mode**
+
+```bash
+sudo systemctl stop suricata
+sudo systemctl status suricata  # Should be inactive (dead)
+```
+
+---
+
+## 🚦 **6️⃣ Start Suricata in IPS Mode**
+
+```bash
+sudo suricata -c /etc/suricata/suricata.yml -q 2
+```
+
+✅ `-q 2` → binds Suricata to NFQUEUE `2`.
+
+---
+
+## 🧪 **7️⃣ Test from Attacker**
+
+On **Debian 2**:
+
+```bash
+ping <Suricata_Server_IP> -c 2
+```
+
+---
+
+## ✅ **8️⃣ Observe the Drop**
+
+Back on the Suricata terminal, you should see:
+
+```
+[Drop] [1:123:1] Ping Detected {ICMP} ...
+```
+
+✅ ICMP packets are _dropped_ — **Ping fails!**
+
+---

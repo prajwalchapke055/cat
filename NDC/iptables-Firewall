@@ -1,0 +1,192 @@
+# 🟢 `iptables` — Stateful Packet Inspection (SPI) Firewall (Debian)
+
+## **🔵 Lab Setup**
+
+| Machine   | IP             | Services      |
+| --------- | -------------- | ------------- |
+| Debian-01 | 192.168.80.128 | SSH + Apache2 |
+| Debian-02 | 192.168.80.130 | SSH + Apache2 |
+
+---
+
+## ✅ **Step 1 – Install & Check Services**
+
+### **📌 On Both Machines**
+
+```bash
+# Install
+sudo apt update && sudo apt install openssh-server apache2 iptables -y
+
+# Test SSH
+ssh shuhari@127.0.0.1       # Local SSH
+ssh shuhari@192.168.80.130  # Debian1 ➜ Debian2
+ssh shuhari@192.168.80.128  # Debian2 ➜ Debian1
+
+# Test Apache2
+links http://127.0.0.1       # Local site
+links http://192.168.80.130  # Debian1 ➜ Debian2 site
+links http://192.168.80.128  # Debian2 ➜ Debian1 site
+```
+
+---
+
+## ✅ **Step 2 – Basic Firewall Setup (Debian-01)**
+
+```bash
+# Confirm iptables installed
+sudo which iptables
+
+# View rules
+sudo iptables -L -v
+
+# Set default policy to DROP (forward)
+sudo iptables -P FORWARD DROP
+
+# Set INPUT to DROP
+sudo iptables -P INPUT DROP
+
+# If you drop INPUT, you may lock out SSH! So:
+# Allow loopback first (always allow localhost)
+sudo iptables -A INPUT -i lo -j ACCEPT
+
+# Allow ESTABLISHED connections
+sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# ✅ Test self-SSH should work
+ssh shuhari@127.0.0.1
+
+# ✅ Test outbound SSH to other machine should work
+ssh shuhari@192.168.80.130
+```
+
+---
+
+## ✅ **Step 3 – Allow SSH Only From Base Machine**
+
+**Base machine IP:** `192.168.80.1`
+**Allow SSH port 22 only from this IP**
+
+```bash
+# Allow SSH from base machine only
+sudo iptables -A INPUT -s 192.168.80.1 -p tcp --dport 22 -j ACCEPT
+```
+
+**❗ Now SSH from other IPs will fail except the allowed one.**
+
+---
+
+## ✅ **Step 4 – Allow Specific Ports**
+
+```bash
+# Allow HTTP if needed (optional)
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+```
+
+---
+
+## ✅ **Step 5 – Check & Save**
+
+```bash
+# View all rules with line numbers
+sudo iptables -L --line-numbers -v
+```
+
+---
+
+## ✅ **Step 6 – Optional: Automate with Script**
+
+```bash
+cat > fw.sh <<EOF
+#!/bin/bash
+iptables -F
+iptables -P FORWARD DROP
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -s 192.168.80.1 -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -L -v
+EOF
+
+# Make executable
+chmod 755 fw.sh
+
+# Run
+sudo ./fw.sh
+```
+
+---
+
+## ✅ **Optional Maintenance**
+
+| Command                      | Purpose                        |
+| ---------------------------- | ------------------------------ |
+| `iptables -L --line-numbers` | View rules with line numbers   |
+| `iptables -D INPUT <num>`    | Delete rule number `<num>`     |
+| `iptables -F`                | Flush all rules (be cautious!) |
+
+---
+
+# 🔒 **iptables Practical — Make Rules Persistent After Reboot**
+
+## ✅ **Step 1 — Save Rules Manually**
+
+```bash
+# Create a dedicated folder for storing iptables rules
+sudo mkdir -p /etc/iptables
+
+# Save current rules and write to file
+sudo sh -c "iptables-save > /etc/iptables/rules.v4"
+
+# Verify the file
+ls -l /etc/iptables/
+```
+
+---
+
+## ✅ **Step 2 — Install `iptables-persistent`**
+
+```bash
+sudo apt-get update
+sudo apt-get install iptables-persistent
+```
+
+🔹 **When prompted:**
+✔ Save existing rules → YES
+✔ Save IPv6 rules → YES (or NO if not used)
+
+---
+
+## ✅ **Step 3 — Test**
+
+```bash
+# Reboot the system
+sudo reboot
+
+# After reboot, check the rules are restored
+sudo iptables -L -v
+```
+
+---
+
+## ✅ **Step 4 — Update Rules Later**
+
+If you **modify** your firewall script and run it:
+
+```bash
+# Check current rules
+sudo iptables -L
+
+# Save the new rules again
+sudo sh -c "iptables-save > /etc/iptables/rules.v4"
+```
+
+---
+
+## ✅ **How `iptables-persistent` Works**
+
+- It loads `/etc/iptables/rules.v4` (and rules.v6 for IPv6) automatically at boot.
+- Any changes must be **saved** again to `rules.v4`.
+
+---

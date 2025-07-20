@@ -1,0 +1,152 @@
+# 📌 Snort IDS on Linux
+
+## ⚙️ **1️⃣ Install Required Dependencies**
+
+```bash
+sudo apt-get install -y bison ca-certificates flex gcc libdumbnet-dev libluajit-5.1-dev \
+libnghttp2-dev libpcap-dev libpcre3-dev libssl-dev make openssl wget zlib1g-dev
+```
+
+---
+
+## ⚙️ **2️⃣ Download & Compile DAQ**
+
+```bash
+sudo mkdir -p /usr/src/snort_src
+# Place `daq-2.0.7.tar.gz` in `/usr/src/snort_src` (optional)
+cd /usr/src/snort_src
+sudo tar -zxf daq-2.0.7.tar.gz
+cd daq-2.0.7
+sudo ./configure
+sudo make
+sudo make install
+```
+
+---
+
+## ⚙️ **3️⃣ Download & Compile Snort**
+
+```bash
+cd /usr/src/snort_src
+sudo tar zxf snort-2.9.20.tar.gz
+cd snort-2.9.20
+```
+
+### ✅ Fix Missing RPC Headers
+
+```bash
+ls -l /usr/include/tirpc/
+sudo ln -s /usr/include/tirpc/netconfig.h /usr/include/
+sudo ln -s /usr/include/tirpc/rpc/* /usr/include/rpc/
+```
+
+---
+
+### 🔨 **Build Snort**
+
+```bash
+sudo ./configure
+sudo make
+sudo make install
+sudo ldconfig   # Load libraries
+snort -V        # Verify version
+```
+
+---
+
+## ⚙️ **4️⃣ Create Snort User & Directories**
+
+```bash
+sudo groupadd snort
+sudo useradd snort -r -s /usr/sbin/nologin -c SNORT_IDS -g snort
+
+sudo mkdir -p /etc/snort/rules
+sudo mkdir /var/log/snort
+sudo mkdir /usr/local/lib/snort_dynamicrules
+
+sudo cp /usr/src/snort_src/snort-2.9.20/etc/*.conf* /etc/snort/
+sudo cp /usr/src/snort_src/snort-2.9.20/etc/*.map /etc/snort/
+
+sudo touch /etc/snort/rules/white_list.rules
+sudo touch /etc/snort/rules/black_list.rules
+sudo touch /etc/snort/rules/local.rules
+```
+
+---
+
+## ⚙️ **5️⃣ Set Permissions**
+
+```bash
+sudo chmod -R 5775 /etc/snort/
+sudo chmod -R 5775 /var/log/snort/
+sudo chmod -R 5775 /usr/local/lib/snort_dynamicrules/
+
+sudo chown -R snort:snort /etc/snort/
+sudo chown -R snort:snort /var/log/snort/
+sudo chown -R snort:snort /usr/local/lib/snort_dynamicrules/
+```
+
+---
+
+## ⚙️ **6️⃣ Configure snort.conf**
+
+Edit paths to point to your rules:
+
+```bash
+sudo nano /etc/snort/snort.conf
+```
+
+Update:
+
+```plaintext
+var RULE_PATH /etc/snort/rules
+var SO_RULE_PATH /etc/snort/so_rules
+var PREPROC_RULE_PATH /etc/snort/preproc_rules
+
+var WHITE_LIST_PATH /etc/snort/rules
+var BLACK_LIST_PATH /etc/snort/rules
+
+# Comment other includes.
+include $RULE_PATH/local.rules
+include $RULE_PATH/white_list.rules
+include $RULE_PATH/black_list.rules
+```
+
+---
+
+## ⚙️ **7️⃣ Add a Test Rule**
+
+```bash
+sudo nano /etc/snort/rules/local.rules
+```
+
+Add:
+
+```plaintext
+alert ip any any -> any any (msg: "Kuch Bhi"; sid: 1000001;)
+```
+
+---
+
+## ⚙️ **8️⃣ Test Configuration**
+
+✅ **Syntax check:**
+
+```bash
+sudo snort -T -c /etc/snort/snort.conf
+```
+
+✅ **Run Snort:**
+
+```bash
+sudo snort -i ens33 -u snort -g snort -c /etc/snort/snort.conf -A console
+```
+
+---
+
+## ✅ **Expected Result**
+
+* Snort starts and monitors **ens33**.
+* When traffic matches the test rule → You’ll see **`[**] Kuch Bhi [**]`** in the console.
+
+---

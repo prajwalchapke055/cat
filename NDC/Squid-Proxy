@@ -1,0 +1,201 @@
+# 🔍 Squid as a Reverse Proxy (Port 3128)
+
+## **🖥️ Setup**
+
+| Role               | OS               | Example IP       |
+| ------------------ | ---------------- | ---------------- |
+| Squid Proxy Server | Debian           | `192.168.80.130` |
+| Backend Web Server | Debian (Apache2) | `192.168.80.129` |
+
+---
+
+## ✅ **Step 1: Install Squid on Proxy Server**
+
+**🔹 On Deb-01 (Proxy Server)**
+
+```bash
+# Install Squid
+sudo apt-get install squid -y
+
+# Verify installation path
+sudo which squid
+
+# Check total lines in config file
+wc -l /etc/squid/squid.conf
+```
+
+---
+
+## ✅ **Step 2: Edit `squid.conf`**
+
+```bash
+sudo nano /etc/squid/squid.conf
+```
+
+---
+
+## ✅ **Step 3: Configure Sections**
+
+**1️⃣ **TAG: `acl`** → Allow destination**
+
+- 📍 **Around Line `1330`**
+
+```bash
+acl my_site_acl dst 192.168.80.130
+# Replace with Proxy Server IP
+```
+
+---
+
+**2️⃣ **TAG: `http_access`** → Allow ACL**
+
+- 📍 **Around Line `1528`**
+
+```bash
+http_access allow my_site_acl
+```
+
+---
+
+**3️⃣ **TAG: `http_port`** → Reverse Proxy Port**
+
+- 📍 **Around Line `2114`**
+
+```bash
+http_port 3128 accel vhost defaultsite=192.168.80.129
+# 192.168.80.129 = Apache2 Backend IP
+```
+
+---
+
+**4️⃣ **TAG: `cache_peer`** → Define Backend Server**
+
+- 📍 **Around Line `3483`**
+
+```bash
+cache_peer 192.168.80.129 parent 80 0 no_query originserver name=myServer
+```
+
+---
+
+**5️⃣ **TAG: `cache_peer_access`** → Control Peer Access**
+
+- 📍 **Around Lines `3523`**
+
+```bash
+cache_peer_access myServer allow my_site_acl
+cache_peer_access myServer deny all
+```
+
+---
+
+## ✅ **Step 4: Restart Squid**
+
+```bash
+sudo systemctl restart squid
+
+# Confirm status
+sudo systemctl status squid
+```
+
+---
+
+## ✅ **Step 5: Check Lines (Optional)**
+
+```bash
+sudo nano /etc/squid/squid.conf -l
+```
+
+---
+
+## ✅ **Step 6: Test Reverse Proxy**
+
+- Open a **browser** → Access:
+
+```
+http://192.168.80.130:3128
+```
+
+✅ You should see **Apache2’s page** from the backend (`192.168.80.129`).
+
+---
+
+# 🚦 Practical: Load Balancing using Squid
+
+| Machine    | Role                  | IP Address       |
+| ---------- | --------------------- | ---------------- |
+| **Deb-01** | Squid Load Balancer   | `192.168.80.130` |
+| **Deb-02** | Backend Apache Server | `192.168.80.129` |
+| **Deb-03** | Backend Apache Server | `192.168.80.133` |
+
+---
+
+## ✅ **Step 1: Verify Squid Installation**
+
+```bash
+sudo which squid
+```
+
+---
+
+## ✅ **Step 2: Edit `squid.conf`**
+
+```bash
+sudo nano /etc/squid/squid.conf
+```
+
+---
+
+## ✅ **Step 3: Configure Reverse Proxy with Load Balancing**
+
+### 📌 **a) Setup Listening Port**
+
+- 🔍 **Search:** `TAG: http_port`
+- ✅ **Add or Edit:**
+
+  ```bash
+  http_port 80 vhost
+  ```
+
+---
+
+### 📌 **b) Setup Cache Peers**
+
+- 🔍 **Search:** `TAG: cache_peer`
+- ✅ **Add both backend Apache servers:**
+
+  ```bash
+  cache_peer 192.168.80.129 parent 80 0 no-query originserver round-robin weight=1 name=myServer1
+  cache_peer 192.168.80.133 parent 80 0 no-query originserver round-robin weight=1 name=myServer2
+  ```
+
+---
+
+## ✅ **Step 4: Save & Restart Squid**
+
+```bash
+sudo systemctl restart squid
+sudo systemctl status squid
+```
+
+---
+
+## ✅ **Step 5: Remove Apache (if installed on Squid Server)**
+
+```bash
+sudo apt remove apache2
+```
+
+---
+
+## ✅ **Step 6: Test Load Balancing**
+
+1️⃣ Open Browser:
+
+```plaintext
+http://192.168.80.130
+```
+
+2️⃣ Refresh multiple times — you should see responses load-balanced from **Deb-02** and **Deb-03** Apache pages.
+
+---

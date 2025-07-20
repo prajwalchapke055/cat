@@ -1,0 +1,247 @@
+# 🔍Nagios Monitoring in Linux using NCPA
+
+## 🖥️ **Requirements**
+
+| Role           | OS     | IP Example       |
+| -------------- | ------ | ---------------- |
+| Nagios Server  | Debian | `192.168.80.101` |
+| Client Machine | Debian | `192.168.80.130` |
+
+---
+
+## ✅ **Step 1: Install & Configure NCPA on Client**
+
+### **On Client (Debian-02)**
+
+```bash
+# Install dependency
+sudo apt-get install libsqlite3-0
+
+# Install NCPA Agent (example uses a local .deb)
+sudo dpkg -i ncpa-latest-1.amd.deb
+
+# Configure the community string
+sudo nano /usr/local/ncpa/etc/ncpa.cfg
+
+# In the config file, find:
+# community_string = mytoken
+# Replace with:
+community_string = Password1234
+
+# Save & exit
+
+# Restart the NCPA agent
+sudo systemctl restart ncpa
+```
+
+✅ **Check NCPA Agent is running:**
+Open a browser: `https://192.168.80.130:5693`
+👉 Use `Password1234` when prompted.
+
+---
+
+## ✅ **Step 2: Test From Nagios Server**
+
+### **On Nagios Server (Debian-01)**
+
+```bash
+# Go to Nagios plugins directory
+cd /usr/local/nagios/libexec/
+
+# Run a test to check connection with NCPA Agent
+sudo ./check_ncpa.py -t Password1234 -H 192.168.80.130 -M system/agent_version
+```
+
+✅ _You should see `OK` with agent version._
+
+---
+
+## ✅ **Step 3: Define Host & Services**
+
+```bash
+cd /usr/local/nagios/etc/servers
+
+# Create a new config file for the client host
+sudo nano deb_12-1.cfg
+```
+
+**Sample `deb_12-1.cfg`**
+
+```bash
+define host {
+    use                 linux-server
+    host_name           deb_12-1
+    alias               Debian 12 Sys 1
+    address             192.168.80.130
+    max_check_attempts  5
+}
+
+define service {
+    use                 generic-service
+    host_name           deb_12-1
+    service_description Agent Version
+    check_command       check_ncpa!-t 'Password1234' -p -P 5693 -M system/agent_version
+}
+
+define service {
+    use                 generic-service
+    host_name           deb_12-1
+    service_description Virtual Memory
+    check_command       check_ncpa!-t 'Password1234' -p -P 5693 -M memory/virtual -w 50 -c 80 -u -G
+}
+```
+
+---
+
+## ✅ **Step 4: Verify Nagios Config**
+
+```bash
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+```
+
+✅ _Ensure there are no errors._
+
+---
+
+## ✅ **Step 5: Restart Nagios**
+
+```bash
+sudo systemctl restart nagios
+```
+
+---
+
+## ✅ **Step 6: Verify in Browser**
+
+Open `https://192.168.80.101/nagios/`
+
+- **Username:** `nagiosadmin`
+- **Password:** `i`
+
+✔ **You should see:**
+
+- The new host (`deb_12-1`) listed.
+- Services (`Agent Version`, `Virtual Memory`) showing **UP** & OK.
+
+---
+
+# 🟢 Nagios — Monitoring Remote Windows Host
+
+### **🔹 Server: Debian**
+
+**Nagios Server** (Same setup as your previous Nagios practical)
+
+### **🔹 Client: Windows**
+
+| **Component** | **Details**                                                |
+| ------------- | ---------------------------------------------------------- |
+| Tool          | NCPA Agent                                                 |
+| URL           | [https://192.168.80.132:5693](https://192.168.80.132:5693) |
+| Required      | Password/Token                                             |
+
+**✅ NCPA service must be running**
+
+---
+
+### **🔹 Install `check_ncpa` Plugin on Nagios**
+
+```bash
+# Download & extract
+cd /usr/local/nagios/libexec/
+sudo wget http://192.168.1.251/sw/security_tools/nagios/check_ncpa.tar.gz
+sudo tar zxf check_ncpa.tar.gz
+
+# Make executable
+chmod +x check_ncpa.py
+
+# Add Python path if missing
+nano check_ncpa.py
+# Add at top:
+#!/usr/bin/env python3
+
+# Test
+./check_ncpa.py -V
+./check_ncpa.py -t Password1234 -H 192.168.80.132 -M memory/virtual
+```
+
+---
+
+### **🔹 Configure Commands**
+
+```bash
+sudo nano /usr/local/nagios/etc/objects/commands.cfg
+
+# Add:
+define command {
+    command_name check_ncpa
+    command_line $USER1$/check_ncpa.py -H $HOSTADDRESS$ $ARG1$
+}
+```
+
+---
+
+### **🔹 Configure Remote Host**
+
+```bash
+# Enable directory for servers
+sudo nano /usr/local/nagios/etc/nagios.cfg
+# Uncomment:
+cfg_dir=/usr/local/nagios/etc/servers
+
+# Create directory if not present
+sudo mkdir /usr/local/nagios/etc/servers
+
+# Create Windows host config
+sudo nano /usr/local/nagios/etc/servers/win10-1.cfg
+```
+
+Add:
+
+```bash
+define host {
+    use windows-server
+    host_name win10-1
+    alias Windows 10 Sys 1
+    address 192.168.80.132
+    max_check_attempts 5
+}
+
+define service {
+    use generic-service
+    host_name win10-1
+    service_description NCPA Agent Version
+    check_command check_ncpa!-t 'Password1234' -P 5693 -M system/agent_version
+}
+
+define service {
+    use generic-service
+    host_name win10-1
+    service_description CPU Average
+    check_command check_ncpa!-t 'Password1234' -P 5693 -M cpu/percent -w 20 -c 40 -q 'aggregate=avg'
+}
+```
+
+---
+
+### ✅ **Verify & Restart**
+
+```bash
+# Validate config
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+
+# Restart Nagios
+sudo systemctl restart nagios
+```
+
+---
+
+### **🔹 Browser Check**
+
+```
+http://<Nagios-Server-IP>/nagios
+# Login: nagiosadmin + your password
+```
+
+✅ **You should see Windows host listed → Services should show `OK`**
+
+---

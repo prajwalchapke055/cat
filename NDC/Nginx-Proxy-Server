@@ -1,0 +1,52 @@
+# 🔵 Nginx - Reverse Proxy Practical
+
+### **Debian 1 — Apache2 Server**
+
+```bash
+# IP: 192.168.80.129
+
+sudo apt-get update && sudo apt-get install apache2 -y
+echo "Hello World" | sudo tee /var/www/html/index.html
+```
+
+---
+
+### **Debian 2 — Nginx Reverse Proxy**
+
+```bash
+# IP: 192.168.80.130
+
+sudo apt-get update && sudo apt-get install nginx -y
+
+# Remove default config
+sudo rm /etc/nginx/sites-enabled/*
+
+# Create reverse proxy config
+sudo nano /etc/nginx/sites-available/rp.conf
+```
+
+Add:
+
+```nginx
+server {
+    listen 80;
+    location / {
+        proxy_pass http://192.168.80.129;
+    }
+}
+```
+
+```bash
+# Link config to enabled sites
+sudo ln -s /etc/nginx/sites-available/rp.conf /etc/nginx/sites-enabled/
+
+# Test config
+sudo nginx -t
+
+# Restart nginx
+sudo systemctl restart nginx
+```
+
+✅ **Test:** Open browser → [http://192.168.80.130](http://192.168.80.130) → Should show **“Hello World”**
+
+---
