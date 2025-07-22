@@ -1,0 +1,79 @@
+# ✅ **🔑 WINDOWS EFS — `cipher` COMMAND CHEAT SHEET**
+
+### 📂 **1️⃣ Make Folder & File**
+
+```cmd
+mkdir C:\EncryptTest
+cd C:\EncryptTest
+echo Secret > secret.txt
+```
+
+---
+
+### 🔒 **2️⃣ Encrypt Folder**
+
+```cmd
+cipher /e /s:C:\EncryptTest
+```
+
+- `/e` → Encrypt
+- `/s:` → Include subfolders/files
+
+---
+
+### 🔍 **3️⃣ Check Status**
+
+```cmd
+cipher /s:C:\EncryptTest
+```
+
+- `E` → Encrypted
+- `U` → Unencrypted
+
+---
+
+### 🔓 **4️⃣ Decrypt**
+
+```cmd
+cipher /d /s:C:\EncryptTest
+```
+
+- `/d` → Decrypt
+
+---
+
+### 🧹 **5️⃣ Remove Encryption from New Files**
+
+To turn off encryption inheritance:
+
+```cmd
+cipher /d C:\EncryptTest
+```
+
+---
+
+### 🔑 **6️⃣ Backup EFS Certificate**
+
+- **Run** → `certmgr.msc`
+- Personal → Certificates → EFS → Export (.PFX)
+
+**Or** via PowerShell:
+
+```powershell
+certutil -exportPFX -p YourPassword My EFS_Backup.pfx
+```
+
+---
+
+### ⚙️ **7️⃣ Help**
+
+```cmd
+cipher /?
+```
+
+---
+
+✅ **Only works on NTFS!**
+✅ **Only your Windows account can open encrypted files.**
+
+---

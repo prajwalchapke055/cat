@@ -1,0 +1,328 @@
+# 🔐 **PKI Practical — Root CA, Sub CA & User Signing**
+
+## ⚙️ **Tools & Folders**
+
+- **Tool:** XCA (GUI tool for managing keys, certificates, CSRs, chains)
+- **Folder:** `My_Files/PKI/Lab1`
+
+---
+
+## 📌 **1️⃣ Setup ROOT CA**
+
+✅ **Steps:**
+
+1. **Create Database:**
+
+   - Name: `root_ca`
+   - Secure with password.
+
+2. **Generate Private Key:**
+
+   - `root_ca_key`
+
+3. **Create Certificate:**
+
+   - **Source:** Self-signed.
+   - **Template:** _CA_
+   - **Subject:** Fill with CA details.
+   - **Extensions:** Validity: 10 years.
+   - Save with name: `001-001-rootca-CRT.crt`.
+
+4. **Export:**
+
+   - Save `.crt` in your folder.
+
+---
+
+## 📌 **2️⃣ Setup SUB CA**
+
+✅ **Steps:**
+
+1. **Create Database:**
+
+   - Name: `subca`
+
+2. **Create Private Key:**
+
+   - `subca_key`
+
+3. **Generate CSR:**
+
+   - Source: New request
+   - Template: _CA_
+   - Fill Subject (org details).
+   - Save CSR: `002-001-subca-CSR.pem`.
+
+4. **ROOT CA Signs SUB CA:**
+
+   - Open `root_ca` → CSR → Import `002-001-subca-CSR.pem`
+   - Create Certificate:
+
+     - Source: Use Root CA for signing.
+     - Template: _CA_
+     - Validity: 5 years.
+
+   - Save: `002-002-subca-CRT.crt`.
+
+5. **SUB CA:**
+
+   - Import `002-002-subca-CRT.crt` into `subca` DB.
+
+---
+
+## 📌 **3️⃣ Setup USER (Tinku)**
+
+✅ **Steps:**
+
+1. **Create Database:**
+
+   - Name: `tinku`
+
+2. **Generate Private Key:**
+
+   - `tinku_key`
+
+3. **Generate CSR:**
+
+   - Template: _CA (default)_
+   - Subject: Fill User details.
+   - Email: `tinku@gmail.com`
+   - Save: `003-001-tinku-CSR.pem`.
+
+4. **SUB CA Signs USER:**
+
+   - Import `003-001-tinku-CSR.pem` into `subca` DB.
+   - Create Certificate:
+
+     - Source: Sub CA.
+     - No template.
+     - Key Usage: _Digital Signature_
+
+   - Save: `003-002-tinku-CRT.crt`.
+
+5. **USER:**
+
+   - Import `003-002-tinku-CRT.crt` into `tinku` DB.
+
+---
+
+## 📌 **4️⃣ Create PFX (User Chain)**
+
+✅ **Steps:**
+
+- In Tinku’s DB:
+
+  - Select `tinku` cert → Export → Format: PFX (PKCS#12).
+  - Include Private Key.
+  - Protect with password.
+  - Name: `003-003-tinku-CRT_CHAIN_KEY_ENC.pfx`
+
+---
+
+## 📌 **5️⃣ Import Chain to Windows**
+
+✅ **Steps:**
+
+1. **Search:** `certmgr`
+2. **Import:**
+
+   - **Trusted Root:** Import `rootca` cert.
+   - **Personal:** Import `003-003-tinku-CRT_CHAIN_KEY_ENC.pfx`.
+
+---
+
+## 📌 **6️⃣ Digitally Sign a Word/PDF**
+
+✅ **Steps:**
+
+1. Open **Word** → Write a short doc.
+2. Save as **Word & PDF**.
+3. Open **Word → File → Info → Protect Document → Add a Digital Signature.**
+4. Choose the `Tinku` certificate from **Personal Store**.
+5. Apply signature → Save.
+
+---
+
+# 🔐PKI Practical — HTTPS Website Setup
+
+## ⚙️ **1️⃣ Generate & Sign Website Certificate**
+
+### **On XCA:**
+
+✅ **Step 1: Create new database**
+
+- **DB Name:** `www.xdb`
+
+✅ **Step 2: Generate Private Key**
+
+- Name: `004-001-www-KEY_NO_ENC`
+- Export Private Key:
+
+  - Format: `.pem`
+  - Save in `My_Files/PKI/Lab1`.
+
+✅ **Step 3: Create CSR**
+
+- **Common Name:** `www.shuharilabs.local`
+- Template: `TLS_server`
+- Fill Subject:
+
+  - CN: `www.shuharilabs.local`
+  - Country: `IN`
+  - State: `MH`
+  - Locality: `Pune`
+  - Organization: `Shuhari Labs`
+  - Email: `...`
+
+- Export CSR: `004-002-www-CSR.pem`.
+
+✅ **Step 4: Sign CSR with Sub CA**
+
+- Open `Sub CA` DB.
+- Import `004-002-www-CSR.pem`.
+- Create new Certificate:
+
+  - Template: `TLS_server`
+  - Check Subject (should match CN).
+
+- Export: `004-003-www-CRT`.
+
+✅ **Step 5: Create Chain**
+
+- In `www.xdb`:
+
+  - Import `004-003-www-CRT` + Sub CA + Root CA.
+  - Export as PEM Chain:
+
+    - Name: `004-004-www-CRT_CHAIN.pem`.
+
+---
+
+## ⚙️ **2️⃣ Deploy on Debian Apache2**
+
+✅ **Step 1: Install Apache & Create SSL Directory**
+
+```bash
+sudo apt update
+sudo apt install apache2 -y
+sudo mkdir /etc/apache2/ssl
+```
+
+✅ **Step 2: Copy Certs (from Windows → Debian)**
+
+Use **WinSCP** or `scp`:
+
+- `004-001-www-KEY_NO_ENC.pem` → `/etc/apache2/ssl/`
+- `004-004-www-CRT_CHAIN.pem` → `/etc/apache2/ssl/`
+
+```bash
+ls -l /etc/apache2/ssl/
+```
+
+You should see both files.
+
+✅ **Step 3: Enable SSL Module & Site**
+
+```bash
+sudo a2enmod ssl
+sudo a2ensite default-ssl
+```
+
+✅ **Step 4: Configure Apache SSL**
+
+```bash
+sudo nano /etc/apache2/sites-available/default-ssl.conf
+```
+
+Add / edit:
+
+```apache
+ServerName www.shuharilabs.local:443
+
+SSLCertificateFile /etc/apache2/ssl/004-004-www-CRT_CHAIN.pem
+SSLCertificateKeyFile /etc/apache2/ssl/004-001-www-KEY_NO_ENC.pem
+```
+
+✅ **Step 5: Restart Apache**
+
+```bash
+sudo systemctl restart apache2
+sudo systemctl status apache2
+```
+
+---
+
+## ⚙️ **3️⃣ Test**
+
+1. **Browser:**
+
+   - Open: `https://192.168.80.100`
+   - Open: `https://www.shuharilabs.local`
+
+2. ✅ Check:
+
+   - Green padlock.
+   - View Certificate → Shows chain:
+
+     - Issued by Sub CA
+     - Root CA trusted (if Root CA is imported in Windows → `certmgr`).
+
+3. **Test ping:**
+   - Where is the `hosts` file in Windows?
+   ```
+      C:\Windows\System32\drivers\etc\hosts
+   ```
+
+---
+
+- 📌 Steps to edit `hosts`:
+  - **Open Notepad as Administrator**
+    - Click **Start → Notepad → Right-click → Run as administrator**
+
+---
+
+- In Notepad, **open:**
+
+```
+   C:\Windows\System32\drivers\etc\hosts
+```
+
+- You may need to change file type to **“All Files (\*.\*)”** to see `hosts`.
+
+---
+
+- **Add your entry at the end:**
+
+```
+   192.168.80.100 www.shuharilabs.local
+```
+
+      - ✅ This maps `www.shuharilabs.local` to your lab IP **without needing DNS**.
+
+---
+
+- **Save the file.**
+  - It must save **without file extension** — only `hosts`, not `hosts.txt`.
+
+---
+
+- **Verify**
+  - Open **Command Prompt**:
+
+```bash
+   ping www.shuharilabs.local
+```
+
+      - It should resolve to **192.168.80.100**.
+
+- **📌 Done! Now your browser will trust the local name.**
+
+---
+
+## 📌 ✅ **End Result**
+
+✔️ HTTPS works
+✔️ Cert Chain: **Root ➜ Sub CA ➜ Server**
+✔️ Your site is now **TLS secured**.
+
+---

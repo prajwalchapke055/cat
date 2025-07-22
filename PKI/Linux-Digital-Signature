@@ -1,0 +1,250 @@
+## 📜 **Practical: OpenSSL PKI Lab — Root CA, Sub CA, Web Server**
+
+---
+
+## 📌 **Machine Setup**
+
+| Role       | Hostname | IP Address   |
+| ---------- | -------- | ------------ |
+| Root CA    | deb1     | 192.168.0.51 |
+| Sub CA     | deb2     | 192.168.0.52 |
+| Web Server | deb3     | 192.168.0.53 |
+
+---
+
+## 🗂️ **DNS & /etc/hosts**
+
+**On all machines:**
+
+```bash
+sudo nano /etc/hosts
+```
+
+Add entries:
+
+```
+192.168.0.51 rootca.shuhari.local
+192.168.0.52 subca.shuhari.local
+192.168.0.53 www.shuhari.local
+```
+
+Check:
+
+```bash
+ping www.shuhari.local
+ping subca.shuhari.local
+ping rootca.shuhari.local
+```
+
+✅ Must resolve by name & IP.
+
+---
+
+## 🏛️ **1️⃣ Root CA (deb1)**
+
+```bash
+# Create directory structure
+mkdir -p ~/ca/{certs,crl,newcerts,private,subca/csr,subca/certs}
+chmod 700 ~/ca/private
+touch ~/ca/index.txt ~/ca/index.txt.attr
+echo 1000 > ~/ca/serial
+echo 1000 > ~/ca/crlnumber
+```
+
+- Download the 'root.cnf' file from server to directory 'ca'
+- $ ls --> Check whether all files are present (10)
+
+- Copy & edit `rootca.cnf`:
+
+```ini
+[ CA_default ]
+dir = /home/shuhari/ca
+```
+
+**Generate Root CA private key:**
+
+```bash
+openssl genrsa -aes256 -out ~/ca/private/ca.key.pem 4096
+chmod 400 ~/ca/private/ca.key.pem
+```
+
+**Create self-signed Root CA cert:**
+
+```bash
+openssl req -config rootca.cnf -key ~/ca/private/ca.key.pem \
+-new -x509 -days 7300 -sha256 -extensions v3_ca \
+-out ~/ca/certs/ca.cert.pem
+```
+
+✅ **Validity:** 20 years
+
+---
+
+## 🏛️ **2️⃣ Sub CA (deb2)**
+
+```bash
+mkdir -p ~/subca/{certs,crl,csr,newcerts,private}
+chmod 700 ~/subca/private
+touch ~/subca/index.txt ~/subca/index.txt.attr
+echo 1000 > ~/subca/serial
+echo 1000 > ~/subca/crlnumber
+```
+
+Copy & edit `subca.cnf`:
+
+```ini
+[ CA_default ]
+dir = /home/shuhari/subca
+```
+
+**Generate Sub CA private key:**
+
+```bash
+openssl genrsa -aes256 -out ~/subca/private/subca.key.pem 4096
+chmod 400 ~/subca/private/subca.key.pem
+```
+
+**Create Sub CA CSR:**
+
+```bash
+openssl req -config subca.cnf -new -sha256 \
+-key ~/subca/private/subca.key.pem \
+-out ~/subca/csr/subca.csr.pem
+```
+
+**Send CSR to Root CA:**
+
+```bash
+scp ~/subca/csr/subca.csr.pem shuhari@192.168.0.51:/home/shuhari/ca/subca/csr/
+```
+
+---
+
+## 🗝️ **3️⃣ Sign Sub CA CSR at Root CA**
+
+```bash
+cd ~/ca
+openssl ca -config rootca.cnf -extensions v3_intermediate_ca \
+-days 3650 -notext -md sha256 \
+-in subca/csr/subca.csr.pem -out subca/certs/subca.cert.pem
+```
+
+✅ **Verify hashes:**
+
+```bash
+md5sum newcerts/1000.pem subca/certs/subca.cert.pem
+```
+
+✅ Same checksum → success.
+
+Send `subca.cert.pem` to Sub CA:
+
+```bash
+scp ~/ca/subca/certs/subca.cert.pem shuhari@192.168.0.52:/home/shuhari/subca/certs/
+```
+
+---
+
+## 🌐 **4️⃣ Issue Web Server Cert from Sub CA**
+
+**On Web Server (deb3):**
+
+```bash
+mkdir ~/certs && cd ~/certs
+openssl genrsa -out www.shuhari.local.key.pem 2048
+chmod 400 www.shuhari.local.key.pem
+```
+
+**Generate CSR:**
+
+```bash
+openssl req -config subca.cnf -key www.shuhari.local.key.pem \
+-new -sha256 -out www.shuhari.local.csr.pem
+```
+
+Send CSR to Sub CA:
+
+```bash
+scp ~/certs/www.shuhari.local.csr.pem shuhari@192.168.0.52:/home/shuhari/subca/csr/
+```
+
+**On Sub CA (deb2):**
+
+```bash
+openssl ca -config subca.cnf -extensions server_cert -days 375 -notext -md sha256 \
+-in csr/www.shuhari.local.csr.pem -out certs/www.shuhari.local.cert.pem
+```
+
+Copy signed cert back to Web Server:
+
+```bash
+scp ~/subca/certs/www.shuhari.local.cert.pem shuhari@192.168.0.53:/home/shuhari/certs/
+scp ~/subca/certs/subca.cert.pem shuhari@192.168.0.53:/home/shuhari/certs/
+scp ~/ca/certs/ca.cert.pem shuhari@192.168.0.53:/home/shuhari/certs/
+```
+
+---
+
+## 🔗 **5️⃣ Bundle Chain on Web Server**
+
+**On deb3:**
+
+```bash
+cd ~/certs
+cat www.shuhari.local.cert.pem subca.cert.pem ca.cert.pem > www.shuhari.local.cert.chain.pem
+```
+
+---
+
+## 🔐 **6️⃣ Configure Apache for HTTPS**
+
+```bash
+sudo apt-get install apache2 -y
+sudo mkdir /etc/apache2/ssl
+sudo cp ~/certs/www.shuhari.local.cert.chain.pem /etc/apache2/ssl/
+sudo cp ~/certs/www.shuhari.local.key.pem /etc/apache2/ssl/
+
+sudo a2enmod ssl
+sudo a2ensite default-ssl
+sudo nano /etc/apache2/sites-available/default-ssl.conf
+```
+
+Edit:
+
+```apache
+ServerName www.shuhari.local:443
+SSLCertificateFile /etc/apache2/ssl/www.shuhari.local.cert.chain.pem
+SSLCertificateKeyFile /etc/apache2/ssl/www.shuhari.local.key.pem
+```
+
+Restart Apache:
+
+```bash
+sudo systemctl restart apache2
+sudo systemctl status apache2
+```
+
+---
+
+## 🔒 **7️⃣ Test HTTPS**
+
+✅ On Windows client:
+
+```
+C:\Windows\System32\drivers\etc\hosts
+192.168.0.53 www.shuhari.local
+```
+
+In browser: **[https://www.shuhari.local](https://www.shuhari.local)**
+
+⚙️ Import **Root CA cert** into **Trusted Root CAs** via `certmgr.msc`.
+
+---
+
+## ✅ **Expected Result**
+
+- 🔒 Valid HTTPS connection.
+- ✔️ Certificate chain: [www.shuhari.local](http://www.shuhari.local) → Sub CA → Root CA.
+- 📜 CA trust validated.
+
+---
