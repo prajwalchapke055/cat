@@ -1,0 +1,76 @@
+# 🔒 **Steganography Practical — Hide & Extract Data**
+
+### **🎒 Requirements**
+
+- ✅ `data.txt` → file with secret message
+- ✅ `image.jpg` → carrier image
+
+---
+
+### **💻 Steps**
+
+1️⃣ **Update & Install `steghide`**
+
+```bash
+sudo apt update
+sudo apt install steghide -y
+```
+
+---
+
+2️⃣ **Embed data into image**
+
+```bash
+steghide embed -ef data.txt -cf image.jpg -sf hidden.jpg -e none -p 12345
+```
+
+- `-ef` → embed file
+- `-cf` → cover file
+- `-sf` → output stego file
+- `-p` → password
+
+---
+
+3️⃣ **Verify new hidden file**
+
+```bash
+ls -lh hidden.jpg
+```
+
+---
+
+4️⃣ **Check hash difference**
+
+```bash
+sha256sum image.jpg
+sha256sum hidden.jpg
+```
+
+👉 **Both hashes will differ!**
+
+---
+
+5️⃣ **Extract hidden data**
+
+```bash
+steghide extract -sf hidden.jpg -p 12345
+```
+
+---
+
+6️⃣ **Check extracted data**
+
+```bash
+ls
+cat data.txt
+```
+
+✅ **Done! Secret message recovered!**
+
+---
+
+**⚡ _One-liner for quick ref:_
+`steghide embed -ef data.txt -cf image.jpg -sf hidden.jpg -e none -p 12345`
+`steghide extract -sf hidden.jpg -p 12345`**
+
+---

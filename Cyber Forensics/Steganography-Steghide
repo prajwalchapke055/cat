@@ -1,0 +1,146 @@
+# GitHub + Steghide Practical Workflow
+
+## 📌 **STEP 1️⃣ — Create a new GitHub repo**
+
+1️⃣ Log in to GitHub → Click **New Repository** → Give it a name (e.g., `myrepo`) → **Public** → **Create Repo** → Copy the **SSH URL**.
+
+---
+
+## 📌 **STEP 2️⃣ — Local project folder**
+
+```bash
+# Make a new project folder:
+mkdir ~/my
+cd ~/my/
+
+# Check git location:
+which git
+
+# Initialize Git:
+git init
+```
+
+---
+
+## 📌 **STEP 3️⃣ — Generate SSH key**
+
+```bash
+# Generate new SSH key:
+ssh-keygen -t rsa -b 4096
+
+# List SSH keys:
+ls ~/.ssh
+
+# Display public key:
+cat ~/.ssh/id_rsa.pub
+```
+
+👉 **Copy the output** → Go to **GitHub → Settings → SSH & GPG Keys → New SSH Key → Paste → Save**
+
+---
+
+## 📌 **STEP 4️⃣ — Add files & commit**
+
+1️⃣ Download or copy your **image** (e.g., `iacsd.jpg`) into `~/my/`
+2️⃣ Add some content file (e.g., `apache.txt`):
+
+```bash
+# Create apache.txt:
+nano apache.txt
+# Example content:
+#!
+sudo apt update
+sudo apt install apache2 -y
+systemctl status apache2
+systemctl start apache2
+```
+
+3️⃣ Stage & commit:
+
+```bash
+git add .
+git config user.name "YOUR NAME"
+git config user.email "YOUR EMAIL"
+git commit -m "Initial commit"
+
+# Add remote & push:
+git remote add origin git@github.com:YOURUSERNAME/YOURREPO.git
+git push origin master
+```
+
+---
+
+## 📌 **STEP 5️⃣ — Embed data using Steghide**
+
+```bash
+# Install Steghide if needed:
+sudo apt update --allow-insecure-repositories
+sudo apt install steghide -y
+
+# Confirm:
+which steghide
+man steghide
+
+# Embed secret file into image:
+steghide embed -cf iacsd.jpg -ef apache.txt
+# Enter passphrase: abc
+
+# Remove the plain file for secrecy:
+rm apache.txt
+
+# Add & push changes:
+git add .
+git commit -m "Embedded secret file"
+git push origin master
+```
+
+---
+
+## 📌 **STEP 6️⃣ — Clone repo & extract secret**
+
+On another machine or new folder:
+
+```bash
+# Clone repo:
+git clone git@github.com:YOURUSERNAME/YOURREPO.git
+
+cd YOURREPO
+ls
+
+# Extract:
+steghide extract -sf iacsd.jpg
+# Enter passphrase: abc
+
+# Verify:
+ls
+cat apache.txt
+```
+
+---
+
+## 📌 **STEP 7️⃣ — Make GitHub repo public**
+
+👉 If you didn’t do it when creating, go to repo → **Settings → Change Visibility → Public**
+
+---
+
+## ✅ **Steghide Practical with fish.jpg**
+
+**If you’re given a `fish.jpg` with hidden data:**
+
+```bash
+# Install Steghide if not done:
+sudo apt update --allow-insecure-repositories
+sudo apt install steghide -y
+
+# Copy fish.jpg to your working folder
+# Extract:
+steghide extract -sf fish.jpg
+# Enter passphrase when asked
+
+# Reveal secret:
+ls
+cat flag.txt
+```
+
+---

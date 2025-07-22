@@ -1,0 +1,145 @@
+## ✅ **1️⃣ Pendrive Zeroization**
+
+**Goal:** Overwrite the USB drive with zeros to remove old data.
+
+```bash
+# Become root (if not already)
+sudo -s
+
+# Identify your USB drive
+lsblk
+fdisk -l
+
+# Suppose your USB is /dev/sdb
+# Zeroize it and monitor progress
+dd if=/dev/zero | pv | dd of=/dev/sdb bs=16K
+
+# Confirm it is zeroized by checking raw hex
+xxd -a /dev/sdb | head
+```
+
+---
+
+## ✅ **2️⃣ Copy a File to USB and Delete It**
+
+**Goal:** Put a test file, then delete it, leaving raw data behind.
+
+```bash
+# Mount your USB if needed (or copy directly)
+cp ~/Desktop/friend.jpg /media/$USER/<usb_mount_point>/
+
+# Unmount properly or just remove the file
+rm /media/$USER/<usb_mount_point>/friend.jpg
+
+# OR: Use a file manager to remove it.
+```
+
+---
+
+## ✅ **3️⃣ Create Hash of USB**
+
+**Goal:** Make a SHA1 hash of the entire USB to ensure integrity before making an image.
+
+```bash
+# Generate hash and save to file
+sha1sum /dev/sdb > myhash.txt
+
+cat myhash.txt
+```
+
+---
+
+## ✅ **4️⃣ Make Bitstream Image (Forensic Copy)**
+
+**Goal:** Take a bit-by-bit image of the USB.
+
+```bash
+# Use dd with pv to show progress
+dd if=/dev/sdb | pv | dd of=evidence.img bs=16K
+
+# Check that the image hash matches the original USB hash
+sha1sum evidence.img >> myhash.txt
+
+cat myhash.txt
+```
+
+Both hashes should match — this proves your image is an exact bitwise copy.
+
+---
+
+## ✅ **5️⃣ Analyze Raw Image for File Signatures**
+
+**Goal:** Find hidden file remnants (e.g., deleted JPG) by searching magic numbers.
+
+```bash
+# Search for PNG or JPG signatures
+# JPG Start: ff d8 ; End: ff d9
+# PNG Start: 89 50 4E 47 ; End: 49 45 4E 44 AE 42 60 82
+
+sudo xxd -a evidence.img | grep 'ffd8'
+sudo xxd -a evidence.img | grep 'ffd9'
+```
+
+---
+
+## ✅ **6️⃣ Calculate Offset in Decimal**
+
+**Goal:** Get start and end offsets to carve file.
+
+```bash
+# Example: suppose start = 01020000, end = 0102ED05
+
+echo "ibase=16; 01020000" | bc    # → Decimal offset
+echo "ibase=16; 0102ED05" | bc    # → Decimal offset
+
+# Subtract to find size
+echo "END - START" | bc
+```
+
+---
+
+## ✅ **7️⃣ Carve the File**
+
+**Goal:** Extract the deleted file using offsets.
+
+```bash
+# Replace START, SIZE with your actual numbers
+dd if=evidence.img of=recovered.jpg skip=START_OFFSET bs=1 count=SIZE
+
+# Example with fake numbers:
+# dd if=evidence.img of=recovered.jpg skip=16908288 bs=1 count=60678
+```
+
+Check:
+
+```bash
+file recovered.jpg
+sha1sum recovered.jpg
+```
+
+---
+
+## ✅ **8️⃣ Verify Final Integrity**
+
+**Goal:** Keep hash values to prove integrity.
+
+```bash
+# Hash final recovered image
+sha1sum recovered.jpg >> myhash.txt
+
+# Compare all hashes
+cat myhash.txt
+```
+
+---
+
+## ✅ **9️⃣ Remove USB Safely**
+
+```bash
+# Unmount USB
+umount /dev/sdb
+
+# Physically unplug it.
+```
+
+---

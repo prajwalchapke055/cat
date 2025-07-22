@@ -1,0 +1,504 @@
+### Install iso file for Kali and install in Virtual Box
+
+- Pendrive ---> Zeroization
+
+- Devices --> USB --> Pendrive
+
+- cd /dev
+- ls
+- cd /zero
+- ls -l zero
+  - crw-rw-r-- : initial c indicates , character special file
+- cat /dev/zero
+- which dd
+- whatis dd
+- man dd
+
+  - convert and copy the file
+
+- lsblk
+- fdisk -l
+- dd if=/dev/zero of=/dev/sdb
+- sudo dd if=/dev/zero of=/dev/sdb
+
+- whatis pv
+  - monitor the progress of data
+- sudo -s
+- dd if=/dev/zero | pv | dd of=/dev/sdb
+- dd if=/dev/zero | pv | dd of=/dev/sdb bs=16384
+
+#####################################################################
+
+- sudo -s
+- root@kali # which xxd
+- whatis xxd
+  - make a hex dump or do the reverse
+- man xxd
+- xxd -a /dev/sdb
+  - Capture the Screenshots
+- exit
+- ls
+- cd Pictures/
+- ls
+  - Rename the image
+- xxd 1.png
+- ls -l
+- ls -lh
+- xxd -a /dev/sdb
+
+- Format it using Windows Base System or Macine
+
+- Now again attach USB to Vitrual Box - Add a new image in it
+
+- Run command in Kali-Linux
+  - xxd -a /dev/sdb
+  - Starting Address and Ending Address (File Capture)
+  - Make a new terminal
+- ls
+- cd Desktop
+- xxd friend.jpg
+- ls -lh
+
+- sudo apt install bc -y
+- echo " 60678 / 16 " | bc
+
+  - Search on png file signature
+
+- New Terminal
+
+  - sudo xxd -a /dev/sdb | grep '89504E47'
+  - sudo xxd /dev/sdb | grep '1A0A'
+
+- sudo dd if=/dev/sdb of=o1.img
+- sudo xxd -a 01.img
+- xxd -a o1.img | grep 'ff d8'
+- man xxd
+
+- xxd 01.img | grep 'ffd8'
+- echo "ibase=16; 01020000" | bc [16908288]
+- xxd 01.img | grep 'ffd9'
+- echo "ibase=16; 0102ED05" | bc [16968966]
+- dd if=o1.img of=ditiss.jpg skip=16908288
+
+root@kali ~
+
+- dd if=/dev/zero of=/dev/sdb
+- xxd -a /dev/sdb
+
+- Internet - sleeing lion jpeg
+
+- xxd -a /dev/sdb
+
+- echo "ibase=16; 01030000" | bc [16973824]
+
+- echo "ibase=16; 010327F3" | bc [16984051]
+
+- subtrat the square bracket numbers
+  echo " 16984051 - 16973824" | bc
+  [10277]
+
+- dd if=/dev/sdb of=my.jpg skip 16973824 bs=1 count 10277
+
+################################################################
+
+- sudo sha1sum /dev/sdb [hash value generate]
+
+- sudo nano myhash.txt
+
+  - paste in it and save it
+
+- delete all images present there
+
+- mkdir demo
+- move to demo --> myhash.txt
+- cd demo
+- ls
+  - myhash.txt
+- #bit by bit copy --> pendrive
+- #dd utility
+- #dd if=/dev/sdb | pv | dd of=evidence.img
+
+- $ sudo dd if=/dev/sdb | pv | dd of=evidence.img
+
+- ls
+- cat myhash.txt
+- sha1sum evidence.img >> myhash.txt
+- cat myhash.txt
+
+###### Remove the pendrive
+
+- cp evidence.img evidence2.img
+- sha1sm evidence2.img >> myhash.txt
+
+  - check the hash value all are same
+
+- echo "base=16; 01030000" | bc
+- echo "base=16; 010327F3" | bc
+
+- echo " 16984051 - 16973824 " | bc
+
+- dd if=evidence.img of=1.jpg skip=16973824 bs=1 count=10227
+
+- ls
+- xxd 1.jpg
+- sha1sum evidence.img >> myhash.txt
+- cat myhash.txt
+
+#######################################################
+
+- 1. Pendrive Zeroization
+     --> dd if=/dev/zero | pv | dd of=/dev/sdb
+
+- 2. Check that the pendrive is Zeroised
+     --> xxd -a /dev/sdb
+
+- 3. Copy a jpg file inside the pendrive
+- 4. Delete the file from the pendrive
+
+########################################################
+
+- 1. Hash Generate (pendrive)
+     --> sha1sum /dev/sdb > myhash.txt
+
+- 2. Bitstream copy
+     --> dd if=/dev/sdb | pv | dd of=evidence.img
+
+- 3. Check the hash value of evidence.img
+     --> It must match with the hash generated for the pendrive
+
+#############################################################
+
+# Digital Forensics
+
+- Process of investigating computer eqipment and associated storage media to determine if it has been used in the commission of a crime or for un-authorized activities.
+
+- It is the collection of techniques and tools used to find evidence in a computer.
+  - Crime : to break a law
+  - Un-authorized : Generally related to organization. Un-authorized access of FB (breach of policy)
+
+##########################################
+
+# Practical Setup (Linux-Kali)
+
+- $ sudo apt update
+
+  - ERROR : The repository 'http://http.kali.org/kali git Release' does not have a Release file.
+
+- $ sudo nano /etc/apt/sources.list
+
+  - deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
+
+- $ sudo apt-key adv --keyserver keyserver.ubuntu.com:80 --recv-keys ED444FF07D8D0BF6
+
+- $ sudo apt update
+
+- $ lsblk
+- $ mkdir /mnt/d
+- $ cd /mnt/d
+- $ sudo poweroff
+  - Add the storage of 1 GB , new disk external to it ...!!
+- $ mkfs /dev/sdb
+- $ mount /dev/sdb /mnt/d
+- $ lsblk
+- $ fdisk -l
+
+- $ dd if=/dev/zero | pv | dd of=/dev/sdb bs=15555
+- $ xxd -a /dev/sdb
+
+- $ chmod 777 /mnt/d
+  - Add image in " jpeg " format --> From File Explorer ---> Copy and Paste in that Folder
+- $ sudo apt install bc -y
+
+- $ xxd -a /dev/sdb | grep 'ff d8'
+- $ xxd -a /dev/sdb | grep 'ff d9'
+- $ echo "ibase=16; 00401517" | bc
+- $ echo "ibase=16; 00400000" | bc
+- $ echo " 4199703 - 4194304 " | bc
+- $ dd if=/dev/sdb | pv | dd of=/home/star/disk.img
+- $ cd /home/star
+- $ ls
+- $ sha1sum /dev/sdb > hash.txt
+- $ cat hash.txt
+  - Delete the image
+- $ sha1sum disk.img >> hash.txt
+- $ cat hash.txt
+  - Both hash key values should be same or match....!!!
+
+#################################################
+
+## Add 1 GB Storage in Kali Linux ---> External Disk
+
+- $ lsblk
+
+#################################################
+
+# Cyber Forensics - Practical setup
+
+- work in mkdir/demo directory
+
+- $ sha1sum evidence.img
+  - It shows diffrenet hash values than remove it .. cross check it
+- $ sha1sum evidence2.img
+- $ cp evidence2.img evidence.img
+- $ mkdir output
+
+- Kali Linux --> Tools --> Bulk Extractor
+
+- $ bulk_extractor evidence.img -o output/
+- $ cd output/
+- $ ls
+- star@kali [~/Demo/output]
+- $ ls -l
+- $ cat windirs.txt
+- $ man bulk_extractor
+
+##### File Sharing in kali Linux (Base machine to Virtual Box)
+
+- smb://192.168.56.1 (host-only)
+  - Username and Password
+
+##### Base machine to Kali linux (VirtualBox)
+
+- $ lsblk
+- $ Copy to home folder iso file (win10 - old one)
+
+- mkdir /mnt/windows
+- ls
+
+- Settings --> Shared Folder --> Machine Folders --> Folder Path ---> Select the Folder --> /mnt/windows --> auto mount
+
+- $ ls
+- $ cp cdrive.img ~ [it will take 5-10 mins]
+- $ ls
+
+- mkdir case1
+- cd case1
+- ls
+  - cdrive.img
+- sha1sum cdrive.img > myhash.txt
+  - Hash value we will get
+- #1. Manually --> 3 jpg files
+
+- xxd cdrive.img | grep ''ffd8"
+  - find the earliest first line
+- echo "ibase=16 000E0E20" | bc
+  - 921120
+- xxd cdrive.img | grep ''ffd9"
+  - find the greater number
+- echo "ibase=16 001230F6" | bc
+  - 1192182
+- echo " 1192182 - 921120 " | bc
+  - 271062
+- dd if=cdrive.img of=1.jpg skip=921120 bs=1 count=271062
+
+##### Hash value should be match
+
+- sha1sum cdrive.img
+- cat myhash.txt
+
+#### Automatic tool
+
+- $ bulk_extractor cdrive.img -o case1/output
+- $ cd /output
+  - Check the file manager in Linux - Kali - Click on email.txt
+- $ cat email_histogram.txt | grep "@gmail.com"
+- $ cat email_histogram.txt | grep "@gmail.com" | grep 'vanani'
+
+- $ cat ip_hitogram.txt
+- $ cat ether_histogram.txt
+- $ ls -l
+- [~/case1]
+- $ ls
+- $ sh1sum cdrive.img >> myhash.txt
+- $ cat myhash.txt
+  - Both Hash Value should match each other , then it will be sucessfully ..
+
+##################################################
+
+## OS Forensics Tool / Software - By PassMark Software
+
+    - OS Forensics V11.1 (Paid / Free)
+
+- Download and Install Software
+- Click on Trail Version
+- Create New Case
+  - Name
+  - Investigator
+  - Organization
+  - Contact Details
+  - Timezone
+  - Default Drive
+  - Acquistion Type - Investigate
+  - Case Folder - Default
+  - Finish
+  - Enable USB Drive (Select and then Unselect)
+- Attach the Pendrive and see the permission of Formating or not
+- Give Read-only persmission for Pendrive attach in Forensics
+- Copy the files and paste it ---> It will revoke the permissions
+
+##### Mount the file system for read-only
+
+- $ sudo mount -o ro /dev/sda1 /media/2tb
+
+- TAB - OS Forensics (Software)
+  - User Activity
+  - Memory Viewer
+  - File System Browser
+
+########################################
+
+## GitHub
+
+- Create a new repository
+- mkdir my
+- cd my/
+- which git
+- ssh-keygen
+- cd ~/.ssh
+- cat id.pub
+  - Copy the public key and paste into deploy keys - GitHub
+- cd /home/star/my
+- git init
+
+  - download image and paste in my folder in file explorer
+
+- ls
+- git add .
+- git config user.name " "
+- git config user.email " "
+- git commit -m "first"
+- git remote add origin <URL>
+- git push origin master
+- nano apache.txt
+  - #!
+  - sudo pt update
+  - sudo apt install apache2
+  - status apache2
+  - start apache2
+- cd /var/www/html
+- rm index.html
+- nano index.html
+
+- ls
+- sudo apt install steghide -y
+- which steghide
+- man steghide
+- steghide --embed -cf iacsd.jpg -ef apache.txt
+  - Enter passphrase : abc
+- rm apache.txt
+- git add .
+- git commit -m "my iacsd"
+- git push origin master
+
+- Make GitHub Repo Public
+
+- git clone "<GITHUB URL>"
+- cd /demo/my
+- ls
+- steghide --extract -sf iacsd.jpg
+  - Enter Passhprashe :
+- ls
+- cat apache.txt
+- history
+
+#### How to delete a history in linux
+
+- ls -a
+- echo "" > .zsh_history
+- rm -f ~/.zsh_history && kill -9 $$
+
+#################################################
+
+# Steganography on Kali Using Steghide
+
+- $ sudo apt update
+  - ERROR in repositories
+- $ sudo apt update --allow_insecure_repositories
+  [ if the error occurs in updating ]
+- $ sudo apt install steghide -y
+- $ which steghide
+- $ man steghide
+
+  - Copy the figh.jpg ---> given by sir in class , it has secret data in that image
+
+- $ steghide --extract -sf fish.jpg
+  - Enter passphrase : ---
+  - Retype Passhprase : ---
+- $ ls
+- $ cat flag.txt
+
+- https://medium.com/the-kickstarter/steganography-on-kali-using-steghide-7dfd3293f3fa
+
+## Recuva
+
+- Download and Install it
+- All Files
+  - File Locations :
+  - Select Path
+  - Finish
+- Scan ---> (wait for 5-10 mins)
+- There is green color mark for files (it can be recover) and red color mark for files (not recover properly)
+- Recover it in other Drive for saving purpose
+
+## Search on :- CrackStation ---> Salted Hasing Password
+
+- Free Pasword hash Cracker
+
+## Search on :- MD5 Hash Generator
+
+## Cyber Check - CDAC
+
+- MD5 , SH1 , SH2 , etc
+- Digital Evidence , etc..
+
+## Volatility Tool - in Kali Linux
+
+## Mobile Forensics
+
+- Mobile Edit ---> Tool --> Find Crack version
+- GlassWire ---> Mobile Networking
+
+## Logs file
+
+- SSH --> /var/log/auth.log
+- DHCP --->
+- DNS --->
+- Apache -->
+- Squid --->
+- APT --->
+- Windows Server -->
+  - Events ---->
+  - Server Login --->
+
+## Practical - Kali
+
+- which hexdump
+- nano hi.txt
+- cat hi.txt
+- hexdump hi.txt
+- hexdump hi.txt > my.hex
+- cat my.hex
+- printf "%s abc" > my.txt
+
+##########################################################
+
+### Kali Linux
+
+- Download thunderbird
+- cd thunderbird
+- $ sudo ./thunderbird
+- $ sudo nano /etc/hosts
+
+  - 192.168.0.101 mail.iacsd.com
+
+- $ ping mail.iacsd.com
+
+- hostname ----> mail.iacsd.com
+- port --> 143
+- username ---> tinku@mail.iacsd.com
+
+- Outgoing -----> Hostname --> mail.iacsd.com
+  ---> 25
+  ---> Normal Password
+
+############################################################

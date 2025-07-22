@@ -1,0 +1,198 @@
+# 🔐 **🔒 DISK ZEROIZATION & IMAGE CARVING (Kali Linux) — FULL LAB**
+
+## 📌 **STEP 1 — Update & Fix Kali Sources**
+
+1️⃣ **Check `sources.list`**
+
+```bash
+sudo nano /etc/apt/sources.list
+```
+
+✅ Example **good source** (Kali Rolling):
+
+```
+deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
+```
+
+2️⃣ **Fix GPG key (if needed)**
+
+```bash
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6
+```
+
+✅ If `apt-key` is deprecated, use:
+
+```bash
+curl -fsSL https://archive.kali.org/archive-key.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kali.gpg
+```
+
+3️⃣ **Update**
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+---
+
+## 📌 **STEP 2 — Add 1GB External Disk (VirtualBox)**
+
+1️⃣ Shut down the VM.
+
+2️⃣ VirtualBox ➜ **Settings → Storage** ➜ Add SATA controller ➜ Add Hard Disk ➜ **Create New Disk** ➜ **1 GB** ➜ VDI ➜ Fixed Size.
+
+✅ Boot the VM again.
+
+---
+
+## 📌 **STEP 3 — Format & Mount**
+
+1️⃣ **Find your new disk**:
+
+```bash
+lsblk
+```
+
+Look for `/dev/sdb`.
+
+2️⃣ **Make FS**:
+
+```bash
+sudo mkfs.ext4 /dev/sdb
+```
+
+3️⃣ **Mount**:
+
+```bash
+sudo mkdir /mnt/d
+sudo mount /dev/sdb /mnt/d
+```
+
+✅ **Verify**:
+
+```bash
+lsblk
+sudo fdisk -l
+```
+
+---
+
+## 📌 **STEP 4 — Zeroize Disk**
+
+✅ **Zero disk with progress monitor**
+
+```bash
+sudo apt install pv -y  # install pv if missing
+
+sudo dd if=/dev/zero bs=1M | pv | sudo dd of=/dev/sdb
+```
+
+- `bs=1M` speeds it up.
+- `pv` shows progress.
+
+✅ **Check zeroed content**:
+
+```bash
+sudo xxd -a /dev/sdb | head
+```
+
+You should see mostly `00`.
+
+---
+
+## 📌 **STEP 5 — Add a Test JPEG**
+
+```bash
+sudo umount /mnt/d
+sudo mkfs.ext4 /dev/sdb
+sudo mount /dev/sdb /mnt/d
+sudo chmod 777 /mnt/d
+sudo cp image-name.jpg /mnt/d/
+ls /mnt/d
+```
+
+✅ Confirm file exists.
+
+---
+
+## 📌 **STEP 6 — Find JPEG Signature**
+
+```bash
+sudo xxd -a /dev/sdb | grep -i 'ffd8'
+sudo xxd -a /dev/sdb | grep -i 'ffd9'
+```
+
+✅ Note the **hex offsets** for:
+
+- `FF D8` → JPEG start.
+- `FF D9` → JPEG end.
+
+---
+
+## 📌 **STEP 7 — Calculate Offsets**
+
+✅ Example:
+
+```
+Start HEX = 00400000
+End HEX = 00401517
+```
+
+Convert to decimal:
+
+```bash
+sudo apt install bc -y
+
+echo "ibase=16; 400000" | bc
+echo "ibase=16; 401517" | bc
+
+# Subtract to get size:
+echo "4199703 - 4194304" | bc
+```
+
+✅ **Note:** Offsets should be in decimal when using `dd`.
+
+---
+
+## 📌 **STEP 8 — Create Bitstream Image**
+
+```bash
+sudo dd if=/dev/sdb bs=4M | pv | dd of=$HOME/disk.img bs=4M status=progress
+ls -lh ~/disk.img
+```
+
+✅ `bs=4M` speeds up dd.
+
+---
+
+## 📌 **STEP 9 — Verify Hash**
+
+```bash
+sudo sha1sum /dev/sdb > ~/hash.txt
+sha1sum ~/disk.img >> ~/hash.txt
+cat ~/hash.txt
+```
+
+✅ The hash of raw device and image **should match**!
+
+---
+
+## 📌 **STEP 🔟 — Carve File**
+
+✅ Use offsets **in decimal**:
+
+```bash
+# Example: skip = start offset, count = size
+
+sudo dd if=$HOME/disk.img of=$HOME/recovered.jpg skip=4194304 bs=1 count=5399 status=progress
+```
+
+✅ Verify:
+
+```bash
+file ~/recovered.jpg
+sha1sum ~/recovered.jpg
+```
+
+✅ Open it: `xdg-open ~/recovered.jpg`
+
+---
