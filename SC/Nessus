@@ -1,0 +1,171 @@
+# ✅ **What is Nessus?**
+
+**Nessus** by **Tenable** is a powerful **vulnerability scanner** used by security professionals to find weaknesses in:
+
+- OS
+- Applications
+- Databases
+- Network devices
+- Cloud resources
+
+**Default Port:** `8834` (HTTPS Web UI)
+
+---
+
+## 🔹 **Step 1 — Download Nessus**
+
+Use `curl` to get the latest `.deb` installer. Example:
+
+```bash
+cd ~/Downloads
+
+curl --request GET \
+  --url 'https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.8.4-debian10_amd64.deb' \
+  --output 'Nessus-10.8.4-debian10_amd64.deb'
+```
+
+✅ Or manually download the `.deb` from:
+👉 [https://www.tenable.com/downloads/nessus](https://www.tenable.com/downloads/nessus)
+
+---
+
+## 🔹 **Step 2 — Install Nessus**
+
+Switch to root (or use `sudo`):
+
+```bash
+sudo su
+cd ~/Downloads
+
+dpkg -i Nessus-10.8.4-debian10_amd64.deb
+```
+
+---
+
+## 🔹 **Step 3 — Start Nessus Service**
+
+```bash
+# Start Nessus
+systemctl start nessusd
+
+# OR older syntax:
+service nessusd start
+
+# Check status
+service nessusd status
+
+# Restart if needed
+service nessusd restart
+```
+
+---
+
+## 🔹 **Step 4 — Verify Nessus is Listening**
+
+```bash
+netstat --tnlp | grep 8834
+```
+
+✅ You should see:
+
+```
+tcp 0 0 0.0.0.0:8834 0.0.0.0:* LISTEN ...
+```
+
+---
+
+## 🔹 **Step 5 — Access Nessus Web Interface**
+
+Open your **browser**:
+
+```
+https://localhost:8834
+```
+
+👉 ⚠️ Use **HTTPS** → You’ll get a **self-signed cert warning** → Accept it.
+
+---
+
+## 🔹 **Step 6 — Initial Setup**
+
+1️⃣ **Choose version**:
+
+- **Nessus Essentials** (Free for students/labs, needs email for activation key)
+- **Nessus Professional** (Paid)
+
+2️⃣ **Create an account** (local admin user).
+
+3️⃣ **Enter activation code** (get it free from Tenable site if using Essentials).
+
+4️⃣ **Nessus downloads plugins** → can take a few minutes.
+
+---
+
+## 🔹 **Step 7 — Run a Scan**
+
+✅ Once Nessus is ready:
+
+1️⃣ Click **New Scan**
+2️⃣ Choose **Basic Network Scan**
+3️⃣ Fill:
+
+- Name: `My First Scan`
+- Targets: `127.0.0.1` **OR** your lab machine IP
+  4️⃣ Save & **Launch**
+
+---
+
+## 🔹 **Step 8 — View Scan Report**
+
+- After scan completes, click the report:
+
+  - Shows:
+
+    - **Open ports**
+    - **Detected services**
+    - **Vulnerabilities**
+    - **CVEs**
+    - Recommendations
+
+✅ You can **export** reports as **HTML**, **PDF**, **CSV**.
+
+---
+
+## ✅ **Extra Useful Nessus CLI Commands**
+
+| Command                     | Use            |                              |
+| --------------------------- | -------------- | ---------------------------- |
+| `systemctl start nessusd`   | Start Nessus   |                              |
+| `systemctl stop nessusd`    | Stop Nessus    |                              |
+| `systemctl restart nessusd` | Restart Nessus |                              |
+| `systemctl status nessusd`  | Check status   |                              |
+| \`netstat --tnlp            | grep 8834\`    | Check if Nessus is listening |
+
+---
+
+## 📌 **Example Practice Targets**
+
+- `127.0.0.1` → Scan local machine.
+- Local LAN VM → Scan a test Debian/Windows VM.
+- `scanme.nmap.org` (with permission only — Nmap’s public test target).
+
+---
+
+## ✅ **Quick Practical Recap**
+
+```
+curl --url '<nessus.deb>' --output 'nessus.deb'
+dpkg -i nessus.deb
+service nessusd start
+netstat --tnlp
+Browser: https://localhost:8834
+Login → Activate → Update plugins → Create new scan → Launch → View report
+```
+
+---
+
+## 🔒 **Lab Note**
+
+**Nessus Essentials is free for personal use. Use only in a lab or with explicit permission.**
+
+---

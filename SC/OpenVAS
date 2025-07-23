@@ -1,0 +1,353 @@
+# 📌 **🔒 OpenVAS (GVM) Practical — Full Lab Setup**
+
+---
+
+# **Practical: Install & Run OpenVAS via Docker**
+
+## ⚙️ **Step 1️⃣ — Update Your System**
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+---
+
+## ⚙️ **Step 2️⃣ — Install Docker**
+
+```bash
+sudo apt install -y docker.io
+```
+
+Check that Docker is installed:
+
+```bash
+docker --version
+```
+
+✅ You should see: `Docker version xx.xx.xx, build xxxxx`
+
+---
+
+## ⚙️ **Step 3️⃣ — Pull & Run OpenVAS Container**
+
+Run this **one-liner**:
+
+```bash
+sudo docker run -d -p 443:443 --name openvas mikesplain/openvas
+```
+
+✅ What this does:
+
+- `-d` → Detached mode.
+- `-p 443:443` → Maps container’s HTTPS port to your local 443.
+- `--name openvas` → Names the container “openvas”.
+- `mikesplain/openvas` → Uses a trusted pre-built OpenVAS image from Docker Hub.
+
+---
+
+## ⚙️ **Step 4️⃣ — Check Container Status**
+
+```bash
+sudo docker ps
+```
+
+✅ Look for: `openvas` — `Up` → means running.
+
+---
+
+## ⚙️ **Step 5️⃣ — Access OpenVAS Web UI**
+
+Open your browser → go to:
+
+```
+https://127.0.0.1
+```
+
+or
+
+```
+https://localhost
+```
+
+✅ Accept any browser SSL warning (self-signed cert).
+
+---
+
+## ⚙️ **Step 6️⃣ — Login**
+
+- **Username:** `admin`
+- **Password:** `admin`
+
+_(This is default for the `mikesplain/openvas` image — change it inside the UI for security.)_
+
+---
+
+## ⚙️ **Step 7️⃣ — Start Scanning**
+
+1️⃣ Click **Scans → Tasks → Wizard**
+2️⃣ Enter a **target IP or hostname**
+3️⃣ Start the scan
+4️⃣ View results in the dashboard
+
+---
+
+## ⚙️ **Common Docker Commands**
+
+👉 **Stop OpenVAS:**
+
+```bash
+sudo docker stop openvas
+```
+
+👉 **Start OpenVAS again:**
+
+```bash
+sudo docker start openvas
+```
+
+👉 **View logs:**
+
+```bash
+sudo docker logs -f openvas
+```
+
+👉 **Remove container:**
+
+```bash
+sudo docker rm -f openvas
+```
+
+👉 **Pull latest image:**
+
+```bash
+sudo docker pull mikesplain/openvas
+```
+
+---
+
+## ✅ **Bonus: Save a Custom Password**
+
+Inside the OpenVAS web UI:
+
+- Go to `Administration → Users → admin → Edit`
+- Change the password.
+
+##########################################################
+
+## ✅ **STEP 1️⃣ — Update & Upgrade Kali**
+
+```bash
+# Become root for fewer sudo prompts
+sudo -s
+
+# Update package lists
+apt update
+
+# Upgrade existing packages
+apt upgrade -y
+
+# Full distribution upgrade for dependencies
+apt dist-upgrade -y
+
+# Reboot if any major upgrades
+reboot
+```
+
+---
+
+## ✅ **STEP 2️⃣ — Install OpenVAS / GVM**
+
+```bash
+# Install Greenbone Vulnerability Manager (same as OpenVAS)
+apt install -y gvm
+```
+
+---
+
+## ✅ **STEP 3️⃣ — Run Initial Setup**
+
+```bash
+# Initialize GVM: downloads feeds, sets up services, creates admin account
+gvm-setup
+```
+
+⚠️ **NOTE:**
+
+- This will take **5–15+ minutes** — it downloads thousands of NVTs, SCAP, CERT data.
+- At the end, it shows your **admin username** and an **auto-generated password**.
+  **👉 SAVE THIS PASSWORD!**
+
+---
+
+## ✅ **STEP 4️⃣ — Verify Installation**
+
+```bash
+# Check everything is properly configured
+gvm-check-setup
+```
+
+✅ If you see: `It seems like your GVM-22 installation is OK.`, you’re good!
+
+---
+
+## ✅ **STEP 5️⃣ — (Optional) Reset Admin Password**
+
+Lost your password? Reset it:
+
+```bash
+# Use gvmd to reset admin password
+gvmd --user=admin --new-password=MyNewSecurePassword123
+```
+
+Or create a **new admin user**:
+
+```bash
+# Replace 'admin2' and 'MyNewPassword'
+runuser -u _gvm -- gvmd --create-user=admin2 --password=MyNewPassword
+```
+
+---
+
+## ✅ **STEP 6️⃣ — Start OpenVAS / GVM Services**
+
+```bash
+# Start all GVM services
+gvm-start
+```
+
+- ✅ This will start **gvmd**, **ospd-openvas**, **redis**, and **gsad**.
+- ✅ `gsad` is the **Greenbone Security Assistant Web UI** (Web portal).
+
+---
+
+## ✅ **STEP 7️⃣ — Access OpenVAS Web Interface**
+
+- Open your browser and visit:
+
+  ```
+  https://localhost:9392
+  ```
+
+- Accept the self-signed SSL warning → Continue.
+- Login with your `admin` and the password you saved.
+
+---
+
+## ✅ **STEP 8️⃣ — First Scan: Quick Localhost Test**
+
+1️⃣ In the web UI → Go to:
+
+```
+Scans → Tasks → Click Magic Wand (Task Wizard)
+```
+
+2️⃣ Enter `127.0.0.1` (or your target IP)
+
+3️⃣ Click **Start Scan**
+
+4️⃣ Wait for the scan to finish → View results on Dashboard.
+
+---
+
+## ✅ **STEP 9️⃣ — Create a Custom Scan Target**
+
+1️⃣ In the web UI → **Configuration → Targets → Create Target**
+
+- Name: `TestTarget`
+- Hosts: `192.168.1.100` _(example target IP)_
+- Leave rest as default → Save.
+
+---
+
+## ✅ **STEP 🔟 — Create & Run a Custom Task**
+
+1️⃣ In the web UI → **Scans → Tasks → New Task**
+
+- Name: `My First Custom Scan`
+- Target: `TestTarget`
+- Scanner: `OpenVAS Default`
+- Scan Config: `Full and Fast` (or as needed)
+
+2️⃣ Save & Click Play ▶️ to start the task.
+
+3️⃣ Watch status → Review report when done.
+
+---
+
+## ✅ **STEP 1️⃣1️⃣ — Stop OpenVAS Services**
+
+To save system resources when done:
+
+```bash
+# Stop all GVM services
+gvm-stop
+```
+
+---
+
+## ✅ **Fix Common Issues**
+
+👉 **If `SCAP DATA MISSING` or `CERT DATA MISSING`**
+Re-run feed updates:
+
+```bash
+# Update feeds
+greenbone-nvt-sync
+greenbone-feed-sync --type SCAP
+greenbone-feed-sync --type CERT
+
+# Restart services
+gvm-start
+```
+
+---
+
+## ✅ **Check OpenVAS Status**
+
+```bash
+# Check GVM status
+gvm-check-setup
+
+# Or check service status directly
+systemctl status gvmd
+systemctl status ospd-openvas
+systemctl status gsad
+```
+
+---
+
+## ✅ **Useful Folders**
+
+| Purpose          | Path                        |
+| ---------------- | --------------------------- |
+| Feed Data (NVTs) | `/var/lib/openvas/plugins/` |
+| GVM Data         | `/var/lib/gvm/`             |
+| Config Files     | `/etc/gvm/`                 |
+| Logs             | `/var/log/gvm/`             |
+
+---
+
+## ✅ **Access Web Portal from Remote**
+
+🔒 If you want to access the web UI externally, bind `gsad` to `0.0.0.0`:
+
+```bash
+# Example: bind to all interfaces on port 9392
+gsad --listen=0.0.0.0 --port=9392
+```
+
+---
+
+## ✅ **REFERENCE**
+
+**Docs:**
+
+- [Official Greenbone Docs](https://greenbone.github.io/docs/)
+- [OpenVAS Setup Cheatsheet](https://kifarunix.com/how-to-install-openvas-on-kali-linux/)
+
+* Reference Link :
+  - https://medium.com/@kennithlowy/installing-openvas-step-by-step-guide-0aa83239a34b
+  - https://hassen-hannachi.medium.com/installing-openvas-on-kali-linux-a54baeaf806a
+
+---

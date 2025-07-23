@@ -1,0 +1,206 @@
+# ✅ **Practical: Burp Suite — Web Application Interception**
+
+## 📌 **Goal**
+
+✔️ Use **Burp Suite** to capture & inspect HTTP/HTTPS traffic.
+✔️ Test login/sign-up pages and see credentials in transit.
+✔️ Add target scope for organized testing.
+✔️ Perform **basic attacks** (fuzzing, repeater, intruder).
+
+---
+
+## 🔹 **Step 1 — Open Burp Suite**
+
+On **Kali Linux**:
+
+```bash
+burpsuite &
+```
+
+- Click **Start Burp** → **Temporary Project** → **Use Burp Defaults** → **Start Burp**.
+
+---
+
+## 🔹 **Step 2 — Configure Browser Proxy**
+
+Burp Suite listens by default on **127.0.0.1:8080**.
+To intercept browser traffic, you must route your browser through Burp.
+
+---
+
+**A) Open Firefox** (or any browser) → **Settings**:
+
+- `Preferences` → `Network Settings` → **Manual Proxy Configuration**:
+
+  - HTTP Proxy: `127.0.0.1`
+  - Port: `8080`
+  - Tick **Use this proxy server for all protocols**
+  - OR:
+
+    - HTTP Proxy: `127.0.0.1` — Port: `8080`
+    - SSL Proxy: `127.0.0.1` — Port: `8080`
+
+✔️ Tick **HTTPS**.
+
+- Click **OK** → **Restart Browser** to apply settings.
+
+---
+
+**Note:** You might see certificate warnings — because Burp intercepts HTTPS.
+For HTTPS:
+
+1. Visit `http://burpsuite` → download the Burp CA Certificate.
+2. Import it in Firefox:
+
+   - `Preferences` → `Privacy & Security` → `Certificates` → `View Certificates` → `Import` → Select `.crt` → Trust for Identifying Websites → OK.
+
+---
+
+## 🔹 **Step 3 — Verify Proxy Works**
+
+1. Back in **Burp Suite**, go to:
+
+   - **Proxy** → **Intercept** → **Ensure Intercept is ON**
+
+2. In your browser, visit any website, e.g.:
+
+   ```
+   http://example.com
+   ```
+
+3. Burp should capture the request:
+
+   - See request under **Proxy → Intercept → Raw Request**.
+
+---
+
+## 🔹 **Step 4 — Add Target Scope**
+
+To organize your test, set a target domain:
+
+- In **Burp**, go to **Target → Scope** → **Add**
+
+  - Example: `http://testphp.vulnweb.com`
+  - Example: `http://demo.testfire.net`
+
+✔️ Now Burp will **only intercept** URLs within this scope if you configure it that way.
+
+---
+
+## 🔹 **Step 5 — Intercept a Login/Signup Form**
+
+1. In **Burp Suite**:
+
+   - **Proxy → Intercept → ON**
+
+2. In the browser:
+
+   - Visit a test site, e.g.
+
+     - [http://testphp.vulnweb.com](http://testphp.vulnweb.com)
+     - [http://demo.testfire.net](http://demo.testfire.net)
+
+   - Go to **Signup** or **Login** page.
+   - Enter **dummy username/password**:
+
+     ```
+     Username: testuser
+     Password: pass123
+     ```
+
+3. Click **Submit** → Burp captures the POST request.
+
+✔️ You’ll see:
+
+- `POST /signup HTTP/1.1`
+- **Raw request body** with your credentials.
+
+---
+
+## 🔹 **Step 6 — Forward or Drop the Request**
+
+- While intercepting, you can:
+
+  - `Forward` → Send it to the server as-is.
+  - `Drop` → Cancel it.
+  - `Edit` → Modify fields (e.g., change username).
+
+---
+
+## 🔹 **Step 7 — Intercept OFF**
+
+If you don’t want Burp to block every request:
+
+- Go to **Proxy → Intercept → OFF**.
+- Now Burp passively records traffic in **HTTP History**.
+
+---
+
+## 🔹 **Step 8 — Analyze in Other Tabs**
+
+### ✔️ **HTTP History**
+
+- Go to **Proxy → HTTP History**
+- View all past requests/responses.
+
+---
+
+### ✔️ **Repeater**
+
+- Right-click any request → **Send to Repeater**
+- Modify headers/parameters → Click **Send** → Inspect response.
+
+---
+
+### ✔️ **Intruder**
+
+- Right-click a request → **Send to Intruder**
+- Use **positions** for fuzzing usernames, passwords, parameters.
+- Example: Brute-force login by setting `username` and `password` as payload markers.
+
+---
+
+### ✔️ **Decoder**
+
+- Encode/Decode strings (e.g., URL, Base64).
+
+---
+
+---
+
+## ✅ **BONUS — Practical Tasks**
+
+1️⃣ Try **modifying** a request before forwarding:
+
+- E.g., change the username to `admin`.
+
+2️⃣ Capture cookies → edit them in Repeater → test if session hijack is possible.
+
+3️⃣ Try **Intruder** on login:
+
+- Payload 1: common usernames (`admin, test, root`)
+- Payload 2: simple passwords (`12345, password`)
+
+4️⃣ Use **Comparer**:
+
+- Compare two requests or responses side-by-side.
+
+5️⃣ Try **Spider**:
+
+- Crawl all pages within your target.
+
+---
+
+## ✅ **Final Practical Flow**
+
+```
+burpsuite &
+# Browser → Proxy Settings → 127.0.0.1:8080
+# Import Burp CA for HTTPS
+# Burp: Proxy → Intercept ON
+# Visit site → Fill form → See captured request
+# Add target scope
+# Use Repeater, Intruder, Decoder, Comparer
+```
+
+---

